@@ -27,7 +27,7 @@ function HeaderBar({
   onClear,
 }: HeaderBarProps) {
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-[#FDFBF7] px-4 py-2 dark:border-white/[0.08] dark:bg-[#141210]">
+    <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-page px-4 py-2 dark:border-white/[0.08] dark:bg-page-dark">
       {article ? (
         <div className="w-0 flex-1">
           <TtsControls articleHtml={article.content} />
@@ -82,7 +82,7 @@ function App() {
     useArticle();
 
   return (
-    <div className="min-h-screen font-sans text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen bg-page font-sans text-neutral-900 dark:bg-page-dark dark:text-neutral-100">
       <HeaderBar
         article={article}
         url={url}
@@ -93,7 +93,7 @@ function App() {
         onSubmit={handleSubmit}
         onClear={handleClear}
       />
-      <main className="mx-auto max-w-prose px-4 py-12">
+      <main className="mx-auto max-w-prose px-4 pt-12 pb-24">
         {error && <p className="text-sm text-neutral-400">Could not extract article content.</p>}
         {article && <ArticleView article={article} sourceUrl={normalizeUrl(url)} />}
       </main>

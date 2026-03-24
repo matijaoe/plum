@@ -61,7 +61,7 @@ export async function highlightCodeBlocks(
     const text = code.textContent ?? "";
     try {
       const html = await codeToHtml(text, {
-        lang: lang ?? "text",
+        lang: lang?.toLowerCase() ?? "text",
         themes: { light: "vitesse-light", dark: "vitesse-dark" },
       });
       const wrapper = document.createElement("div");

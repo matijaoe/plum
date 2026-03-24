@@ -3,6 +3,8 @@ import DOMPurify from "dompurify";
 import { ofetch } from "ofetch";
 import { readingTime } from "reading-time-estimator";
 
+import { hasProtocol } from "ufo";
+
 export interface Article {
   title: string;
   content: string;
@@ -11,15 +13,21 @@ export interface Article {
   ogImage: string | null;
   publishedDate: string | null;
   readTime: number;
+  lang: string | null;
+  dir: string | null;
 }
 
 const PROXY_URL = import.meta.env.VITE_PROXY_URL as string;
 
 export function normalizeUrl(raw: string): string {
-  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+  if (hasProtocol(raw)) {
     return raw;
   }
   return `https://${raw}`;
+}
+
+function fixConcatenatedNames(byline: string): string {
+  return byline.replace(/([a-z])([A-Z])/g, "$1, $2");
 }
 
 async function fetchHtml(url: string): Promise<string> {
@@ -41,10 +49,12 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
   const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content") ?? null;
   const ogSiteName =
     doc.querySelector('meta[property="og:site_name"]')?.getAttribute("content") ?? null;
-  const publishedDate =
+  const publishedDateFromMeta =
     doc.querySelector('meta[property="article:published_time"]')?.getAttribute("content") ??
     doc.querySelector("time[datetime]")?.getAttribute("datetime") ??
     doc.querySelector('meta[name="date"]')?.getAttribute("content") ??
+    doc.querySelector('meta[name="dcterms.date"]')?.getAttribute("content") ??
+    doc.querySelector('meta[name="DC.date"]')?.getAttribute("content") ??
     null;
 
   // Capture language classes before Readability strips them
@@ -87,13 +97,27 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
     }
   }
 
+  // Strip site name suffix from title (e.g. "Article — SiteName" → "Article")
+  let title = parsed.title ?? "";
+  if (siteName) {
+    const separators = [" – ", " — ", " | ", " · ", " - "];
+    for (const sep of separators) {
+      if (title.endsWith(`${sep}${siteName}`)) {
+        title = title.slice(0, -`${sep}${siteName}`.length);
+        break;
+      }
+    }
+  }
+
   return {
-    title: parsed.title ?? "",
+    title,
     content,
-    byline: parsed.byline ?? null,
+    byline: parsed.byline ? fixConcatenatedNames(parsed.byline) : null,
     siteName,
     ogImage,
-    publishedDate,
+    publishedDate: publishedDateFromMeta ?? parsed.publishedTime ?? null,
     readTime: Math.max(1, readingTime(parsed.textContent ?? "").minutes),
+    lang: parsed.lang ?? null,
+    dir: parsed.dir ?? null,
   };
 }

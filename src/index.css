@@ -4,12 +4,58 @@
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  }
 }
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
   --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  --color-page: #fdfbf7;
+  --color-page-dark: #131210;
+}
+
+/* Dark mode prose palette — warm stone tones */
+@media (prefers-color-scheme: dark) {
+  .prose {
+    color: #d6d3d1;
+  }
+
+  .prose :where(h1, h2, h3, h4) {
+    color: #e7e5e4;
+  }
+}
+
+.prose :where(strong) {
+  color: inherit;
+}
+
+/* Spacing */
+.prose {
+  line-height: 1.667;
+}
+
+.prose :where(p) {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.prose :where(li) {
+  margin-top: 0.375em;
+  margin-bottom: 0.375em;
+}
+
+.prose :where(li > p) {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 /* Blockquotes */
@@ -42,21 +88,17 @@ html {
 }
 
 /* Links */
+.prose :where(a) {
+  color: inherit;
+}
+
 .prose :where(a:visited) {
   color: inherit;
 }
 
 @media (prefers-color-scheme: dark) {
-  .prose :where(a) {
-    color: #b0aaa4;
-  }
-
   .prose :where(a:hover) {
-    color: #d6d3d1;
-  }
-
-  .prose :where(a:visited) {
-    color: inherit;
+    color: #e7e5e4;
   }
 }
 
@@ -138,6 +180,18 @@ html {
   }
 }
 
+/* Images */
+.prose :where(img) {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(img) {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
 /* Code blocks */
 .prose pre {
   background-color: #f8f6f1 !important;
@@ -150,7 +204,7 @@ html {
 
 @media (prefers-color-scheme: dark) {
   .prose pre {
-    background-color: #1c1917 !important;
+    background-color: #1e1b19 !important;
     border-color: rgba(255, 255, 255, 0.1);
     color: #e7e5e4;
   }

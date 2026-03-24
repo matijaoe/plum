@@ -40,7 +40,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   }, [article]);
 
   return (
-    <article>
+    <article dir={article.dir ?? undefined} lang={article.lang ?? undefined}>
       <a
         href={sourceUrl}
         target="_blank"
@@ -53,7 +53,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
             {source.path}
           </span>
         )}
-        <span className="ml-1.5 opacity-40">↗</span>
+        <span className="ml-1.5 opacity-70">↗</span>
       </a>
 
       <h1 className="font-serif text-3xl font-normal leading-[1.15] text-balance text-neutral-900 sm:text-4xl lg:text-[2.75rem] dark:text-neutral-100">
@@ -62,15 +62,21 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
 
       <p className="mt-4 text-sm text-neutral-400 dark:text-neutral-500">
         {[
-          article.byline,
           article.publishedDate && formatDate(article.publishedDate),
+          article.byline,
           `${article.readTime} min read`,
         ]
           .filter(Boolean)
           .join(" \u00B7 ")}
       </p>
 
-      {article.ogImage && <img src={article.ogImage} alt="" className="mt-8 w-full rounded-lg" />}
+      {article.ogImage && (
+        <img
+          src={article.ogImage}
+          alt=""
+          className="mt-8 w-full rounded-lg border border-black/[0.08] dark:border-white/[0.1]"
+        />
+      )}
 
       <div
         ref={proseRef}
