@@ -1,6 +1,11 @@
-import dayjs from "dayjs";
-
 export function formatDate(dateStr: string): string {
-  const d = dayjs(dateStr);
-  return d.isValid() ? d.format("MMMM D, YYYY") : dateStr;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) {
+    return dateStr;
+  }
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
