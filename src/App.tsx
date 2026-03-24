@@ -27,7 +27,7 @@ function HeaderBar({
   onClear,
 }: HeaderBarProps) {
   return (
-    <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-page px-4 py-2 dark:border-white/[0.08] dark:bg-page-dark">
+    <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-border-subtle bg-background px-4 py-2">
       {article ? (
         <div className="w-0 flex-1">
           <TtsControls articleHtml={article.content} />
@@ -45,15 +45,15 @@ function HeaderBar({
           readOnly={article !== null}
           placeholder="Paste a link..."
           className={clsx(
-            "min-w-0 flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600",
-            article && "text-neutral-400 dark:text-neutral-600",
+            "min-w-0 flex-1 bg-transparent font-mono text-sm outline-none placeholder:text-muted",
+            article && "text-muted",
           )}
         />
         {article ? (
           <button
             type="button"
             onClick={onClear}
-            className="shrink-0 cursor-pointer pl-3 font-mono text-xs text-neutral-400 transition-colors hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+            className="shrink-0 cursor-pointer pl-3 font-mono text-xs text-muted transition-colors hover:text-secondary"
           >
             clear
           </button>
@@ -63,9 +63,7 @@ function HeaderBar({
             disabled={loading || !resolvedUrl}
             className={clsx(
               "shrink-0 cursor-pointer pl-3 font-mono text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-              resolvedUrl
-                ? "text-neutral-900 dark:text-neutral-100"
-                : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100",
+              resolvedUrl ? "text-foreground" : "text-muted hover:text-foreground",
             )}
           >
             read
@@ -82,7 +80,7 @@ function App() {
     useArticle();
 
   return (
-    <div className="min-h-screen bg-page font-sans text-neutral-900 dark:bg-page-dark dark:text-neutral-100">
+    <div className="min-h-screen bg-background font-sans text-foreground">
       <HeaderBar
         article={article}
         url={url}
@@ -94,7 +92,7 @@ function App() {
         onClear={handleClear}
       />
       <main className="mx-auto max-w-prose px-4 pt-12 pb-24">
-        {error && <p className="text-sm text-neutral-400">Could not extract article content.</p>}
+        {error && <p className="text-sm text-muted">Could not extract article content.</p>}
         {article && <ArticleView article={article} sourceUrl={normalizeUrl(url)} />}
       </main>
     </div>

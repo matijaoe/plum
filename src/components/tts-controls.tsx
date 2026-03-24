@@ -28,10 +28,8 @@ function StopIcon() {
   );
 }
 
-const buttonClass =
-  "shrink-0 cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100";
-const activeClass =
-  "shrink-0 cursor-pointer text-sm text-neutral-900 transition-colors hover:text-neutral-900 dark:text-neutral-100 dark:hover:text-neutral-100";
+const buttonClass = "shrink-0 cursor-pointer text-sm text-muted transition-colors hover:text-foreground";
+const activeClass = "shrink-0 cursor-pointer text-sm text-foreground transition-colors";
 
 function extractText(html: string): string {
   const el = document.createElement("div");

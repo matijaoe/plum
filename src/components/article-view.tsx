@@ -33,7 +33,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     }
 
     const controller = new AbortController();
-    import("../highlight").then(({ highlightCodeBlocks }) =>
+    void import("../highlight").then(({ highlightCodeBlocks }) =>
       highlightCodeBlocks(el, controller.signal),
     );
     return () => controller.abort();
@@ -45,7 +45,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
+        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-widest text-muted"
       >
         <span>{source.host}</span>
         {source.path && (
@@ -56,11 +56,11 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <span className="ml-1.5 opacity-70">↗</span>
       </a>
 
-      <h1 className="font-serif text-3xl font-normal leading-[1.15] text-balance text-neutral-900 sm:text-4xl lg:text-[2.75rem] dark:text-neutral-100">
+      <h1 className="font-serif text-3xl font-normal leading-[1.15] text-balance text-foreground sm:text-4xl lg:text-[2.75rem]">
         {article.title}
       </h1>
 
-      <p className="mt-4 text-sm text-neutral-400 dark:text-neutral-500">
+      <p className="mt-4 text-sm text-muted">
         {[
           article.publishedDate && formatDate(article.publishedDate),
           article.byline,
@@ -74,13 +74,13 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <img
           src={article.ogImage}
           alt=""
-          className="mt-8 w-full rounded-lg border border-black/[0.08] dark:border-white/[0.1]"
+          className="mt-8 w-full rounded-lg border border-border-subtle"
         />
       )}
 
       <div
         ref={proseRef}
-        className="prose prose-lg dark:prose-invert mt-8 max-w-none font-serif text-pretty"
+        className="prose prose-lg mt-8 max-w-none font-serif text-pretty"
         dangerouslySetInnerHTML={{ __html: article.content }}
       />
     </article>

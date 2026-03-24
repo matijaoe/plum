@@ -5,33 +5,64 @@ html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-  }
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
   --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
-
-  --color-page: #fdfbf7;
-  --color-page-dark: #131210;
 }
 
-/* Dark mode prose palette — warm stone tones */
-@media (prefers-color-scheme: dark) {
-  .prose {
-    color: #d6d3d1;
-  }
+:root {
+  --color-background: #fdfbf7;
+  --color-elevated: #f8f6f1;
+  --color-foreground: #292524;
+  --color-prose: #292524;
+  --color-secondary: #57534e;
+  --color-muted: #a8a29e;
+  --color-border: #e7e5e4;
+  --color-border-subtle: rgba(0, 0, 0, 0.08);
+  --color-blockquote-bar: #d6d3d1;
+  --color-code-inline-bg: rgba(120, 120, 120, 0.08);
+  --color-scrollbar: rgba(0, 0, 0, 0.15);
+}
 
-  .prose :where(h1, h2, h3, h4) {
-    color: #e7e5e4;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #131210;
+    --color-elevated: #1e1b19;
+    --color-foreground: #e7e5e4;
+    --color-prose: #d6d3d1;
+    --color-secondary: #a8a29e;
+    --color-muted: #57534e;
+    --color-border: #292524;
+    --color-border-subtle: rgba(255, 255, 255, 0.1);
+    --color-blockquote-bar: #44403c;
+    --color-code-inline-bg: rgba(200, 200, 200, 0.07);
+    --color-scrollbar: rgba(255, 255, 255, 0.12);
   }
+}
+
+@theme inline {
+  --color-background: var(--color-background);
+  --color-elevated: var(--color-elevated);
+  --color-foreground: var(--color-foreground);
+  --color-prose: var(--color-prose);
+  --color-secondary: var(--color-secondary);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+}
+
+/* Prose palette */
+.prose {
+  color: var(--color-prose);
+  line-height: 1.667;
+}
+
+.prose :where(h1, h2, h3, h4) {
+  color: var(--color-foreground);
 }
 
 .prose :where(strong) {
@@ -39,10 +70,6 @@ html {
 }
 
 /* Spacing */
-.prose {
-  line-height: 1.667;
-}
-
 .prose :where(p) {
   margin-top: 1em;
   margin-bottom: 1em;
@@ -60,7 +87,7 @@ html {
 
 /* Blockquotes */
 .prose :where(blockquote) {
-  color: #57534e;
+  color: var(--color-secondary);
   border-left: none;
   position: relative;
   padding-left: 1.25em;
@@ -74,17 +101,7 @@ html {
   bottom: 0;
   width: 3px;
   border-radius: 9999px;
-  background-color: #d6d0c8;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose :where(blockquote) {
-    color: #b0aaa4;
-  }
-
-  .prose :where(blockquote)::before {
-    background-color: #44403c;
-  }
+  background-color: var(--color-blockquote-bar);
 }
 
 /* Links */
@@ -96,37 +113,19 @@ html {
   color: inherit;
 }
 
-@media (prefers-color-scheme: dark) {
-  .prose :where(a:hover) {
-    color: #e7e5e4;
-  }
+.prose :where(a:hover) {
+  color: var(--color-foreground);
 }
 
 /* List markers */
-.prose :where(ul > li)::marker {
-  color: #a8a29e;
-}
-
+.prose :where(ul > li)::marker,
 .prose :where(ol > li)::marker {
-  color: #a8a29e;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose :where(ul > li)::marker,
-  .prose :where(ol > li)::marker {
-    color: #57534e;
-  }
+  color: var(--color-muted);
 }
 
 /* Horizontal rules */
 .prose :where(hr) {
-  border-color: #e7e5e4;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose :where(hr) {
-    border-color: #292524;
-  }
+  border-color: var(--color-border);
 }
 
 .prose :where(h2) {
@@ -162,7 +161,7 @@ html {
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #a8a29e;
+  color: var(--color-secondary);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -182,53 +181,32 @@ html {
 
 /* Images */
 .prose :where(img) {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose :where(img) {
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 /* Code blocks */
 .prose pre {
-  background-color: #f8f6f1 !important;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--color-elevated) !important;
+  border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   line-height: 1.5;
-  color: #292524;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose pre {
-    background-color: #1e1b19 !important;
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #e7e5e4;
-  }
+  color: var(--color-foreground);
 }
 
 /* Inline code */
 .prose :where(:not(pre) > code) {
-  background-color: rgba(120, 120, 120, 0.08);
+  background-color: var(--color-code-inline-bg);
   border: none;
   border-radius: 0.25rem;
   padding: 0.1em 0.25em;
   font-size: 0.8em;
   font-weight: normal;
-  color: inherit;
-  opacity: 0.92;
+  color: var(--color-foreground);
 }
 
 .prose :where(:not(pre) > code)::before,
 .prose :where(:not(pre) > code)::after {
   content: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose :where(:not(pre) > code) {
-    background-color: rgba(200, 200, 200, 0.07);
-  }
 }
