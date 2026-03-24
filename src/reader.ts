@@ -47,13 +47,36 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
     doc.querySelector('meta[name="date"]')?.getAttribute("content") ??
     null;
 
+  // Capture language classes before Readability strips them
+  const langMap = new Map<string, string>();
+  for (const code of doc.querySelectorAll("pre > code[class*='language-']")) {
+    const lang = [...code.classList].find((c) => c.startsWith("language-"));
+    if (lang) {
+      const text = (code.textContent ?? "").slice(0, 80);
+      langMap.set(text, lang);
+    }
+  }
+
   const parsed = new Readability(doc).parse();
   if (!parsed) {
     throw new Error("Failed to parse article");
   }
 
   const rawContent = parsed.content ?? "";
-  const content = DOMPurify.sanitize(rawContent, { FORBID_TAGS: ["style"] });
+  let content = DOMPurify.sanitize(rawContent, { FORBID_TAGS: ["style"] });
+
+  // Re-apply language classes stripped by Readability
+  if (langMap.size > 0) {
+    const tmp = new DOMParser().parseFromString(content, "text/html");
+    for (const code of tmp.querySelectorAll("pre > code")) {
+      const text = (code.textContent ?? "").slice(0, 80);
+      const lang = langMap.get(text);
+      if (lang) {
+        code.classList.add(lang);
+      }
+    }
+    content = tmp.body.innerHTML;
+  }
 
   let siteName = parsed.siteName ?? ogSiteName;
   if (!siteName) {

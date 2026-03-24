@@ -18,7 +18,8 @@
     "ofetch": "^1.5.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "reading-time-estimator": "^2.1.1"
+    "reading-time-estimator": "^2.1.1",
+    "shiki": "^4.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

@@ -1,5 +1,6 @@
 import clsx from "clsx";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TtsControls } from "./components/tts-controls";
 import type { Article } from "./reader";
 import { fetchArticle, normalizeUrl } from "./reader";
 import { formatDate } from "./utils";
@@ -10,6 +11,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const proseRef = useRef<HTMLDivElement>(null);
 
   const resolvedUrl = useMemo(() => {
     const trimmed = url.trim();
@@ -50,10 +52,73 @@ function App() {
     inputRef.current?.focus();
   }
 
+  useEffect(() => {
+    const el = proseRef.current;
+    if (!el) {
+      return;
+    }
+
+    const blocks = el.querySelectorAll("pre > code");
+    if (blocks.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function highlight() {
+      const { codeToHtml } = await import("shiki");
+
+      for (const code of blocks) {
+        if (cancelled) {
+          return;
+        }
+        const pre = code.parentElement as HTMLElement;
+        const lang = [...code.classList]
+          .find((c) => c.startsWith("language-"))
+          ?.replace("language-", "");
+
+        if (lang) {
+          pre.dataset.language = lang;
+        }
+
+        const text = code.textContent ?? "";
+        try {
+          const html = await codeToHtml(text, {
+            lang: lang ?? "text",
+            themes: { light: "github-light", dark: "github-dark" },
+          });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = html;
+          const newPre = wrapper.querySelector("pre");
+          if (newPre) {
+            if (lang) {
+              newPre.dataset.language = lang;
+            }
+            pre.replaceWith(newPre);
+          }
+        } catch {
+          // Language not supported — keep original unstyled block
+        }
+      }
+    }
+
+    highlight();
+    return () => {
+      cancelled = true;
+    };
+  }, [article]);
+
   return (
     <div className="min-h-screen font-sans text-neutral-900 dark:text-neutral-100">
-      <header className="sticky top-0 z-10 relative border-b border-neutral-200 bg-[#FDFBF7] py-2 dark:border-neutral-800 dark:bg-[#141210]">
-        <form onSubmit={handleSubmit} className="mx-auto flex max-w-prose items-center gap-2 px-4">
+      <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-[#FDFBF7] px-4 py-2 dark:border-neutral-800 dark:bg-[#141210]">
+        {article ? (
+          <div className="w-0 flex-1">
+            <TtsControls articleHtml={article.content} />
+          </div>
+        ) : (
+          <div className="w-0 flex-1" />
+        )}
+        <form onSubmit={handleSubmit} className="flex w-full max-w-prose items-center gap-2 px-4">
           <input
             ref={inputRef}
             autoFocus
@@ -90,15 +155,19 @@ function App() {
             </button>
           )}
         </form>
-        {article && (
-          <a
-            href={normalizeUrl(url)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-sm lowercase text-neutral-400 transition-colors hover:text-neutral-900 hover:underline dark:hover:text-neutral-100"
-          >
-            source ↗
-          </a>
+        {article ? (
+          <div className="flex w-0 flex-1 justify-end">
+            <a
+              href={normalizeUrl(url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-sm lowercase text-neutral-400 transition-colors hover:text-neutral-900 hover:underline dark:hover:text-neutral-100"
+            >
+              source ↗
+            </a>
+          </div>
+        ) : (
+          <div className="w-0 flex-1" />
         )}
       </header>
 
@@ -130,6 +199,7 @@ function App() {
             )}
 
             <div
+              ref={proseRef}
               className="prose prose-lg dark:prose-invert mt-8 max-w-none font-serif text-pretty"
               dangerouslySetInnerHTML={{ __html: article.content }}
             />
