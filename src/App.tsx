@@ -1,112 +1,8 @@
-import { useRef, useState } from "react";
-import { Readability } from "@mozilla/readability";
-import DOMPurify from "dompurify";
-
-interface Article {
-  title: string;
-  content: string;
-  byline: string | null;
-  siteName: string;
-  ogImage: string | null;
-  publishedDate: string | null;
-  readTime: number;
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-}
-
-function calculateReadTime(html: string): number {
-  const text = html.replace(/<[^>]*>/g, "");
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 238));
-}
-
-async function fetchHtml(url: string): Promise<string> {
-  const encoded = encodeURIComponent(url);
-  const proxies = [
-    {
-      url: `https://api.codetabs.com/v1/proxy/?quest=${encoded}`,
-      parse: (res: Response) => res.text(),
-    },
-    {
-      url: `https://api.allorigins.win/get?url=${encoded}`,
-      parse: async (res: Response) => {
-        const json = await res.json();
-        return json.contents as string;
-      },
-    },
-  ];
-
-  for (const proxy of proxies) {
-    try {
-      const res = await fetch(proxy.url);
-      if (!res.ok) {
-        continue;
-      }
-      return await proxy.parse(res);
-    } catch {
-      continue;
-    }
-  }
-  throw new Error("All proxies failed");
-}
-
-async function fetchArticle(rawUrl: string): Promise<Article> {
-  const normalizedUrl =
-    rawUrl.startsWith("http://") || rawUrl.startsWith("https://") ? rawUrl : `https://${rawUrl}`;
-
-  const html = await fetchHtml(normalizedUrl);
-
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const base = doc.createElement("base");
-  base.href = normalizedUrl;
-  doc.head.prepend(base);
-
-  const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content") ?? null;
-  const ogSiteName =
-    doc.querySelector('meta[property="og:site_name"]')?.getAttribute("content") ?? null;
-  const publishedDate =
-    doc.querySelector('meta[property="article:published_time"]')?.getAttribute("content") ??
-    doc.querySelector("time[datetime]")?.getAttribute("datetime") ??
-    doc.querySelector('meta[name="date"]')?.getAttribute("content") ??
-    null;
-
-  const parsed = new Readability(doc).parse();
-  if (!parsed) {
-    throw new Error("Failed to parse article");
-  }
-
-  const rawContent = parsed.content ?? "";
-  const content = DOMPurify.sanitize(rawContent);
-
-  let siteName = parsed.siteName ?? ogSiteName;
-  if (!siteName) {
-    try {
-      siteName = new URL(normalizedUrl).hostname;
-    } catch {
-      siteName = normalizedUrl;
-    }
-  }
-
-  return {
-    title: parsed.title ?? "",
-    content,
-    byline: parsed.byline ?? null,
-    siteName,
-    ogImage,
-    publishedDate,
-    readTime: calculateReadTime(rawContent),
-  };
-}
+import clsx from "clsx";
+import { useMemo, useRef, useState } from "react";
+import type { Article } from "./reader";
+import { fetchArticle, normalizeUrl } from "./reader";
+import { formatDate } from "./utils";
 
 function App() {
   const [url, setUrl] = useState("");
@@ -115,16 +11,29 @@ function App() {
   const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const resolvedUrl = useMemo(() => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      return null;
+    }
+    try {
+      new URL(normalizeUrl(trimmed));
+      return trimmed;
+    } catch {
+      return null;
+    }
+  }, [url]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim() || loading) {
+    if (!resolvedUrl || loading) {
       return;
     }
     setLoading(true);
     setError(false);
     setArticle(null);
     try {
-      const result = await fetchArticle(url.trim());
+      const result = await fetchArticle(resolvedUrl);
       setArticle(result);
     } catch (err) {
       console.error("Article extraction failed:", err);
@@ -143,13 +52,14 @@ function App() {
 
   return (
     <div className="min-h-screen font-sans text-neutral-900 dark:text-neutral-100">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#FDFBF7] dark:border-neutral-800 dark:bg-[#141210]">
+      <header className="sticky top-0 z-10 relative border-b border-neutral-200 bg-[#FDFBF7] py-2 dark:border-neutral-800 dark:bg-[#141210]">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-prose items-center gap-2 px-4 py-2"
+          className="mx-auto flex max-w-prose items-center gap-2 px-4"
         >
           <input
             ref={inputRef}
+            autoFocus
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -168,13 +78,28 @@ function App() {
           ) : (
             <button
               type="submit"
-              disabled={loading || !url.trim()}
-              className="shrink-0 cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:text-neutral-100"
+              disabled={loading || !resolvedUrl}
+              className={clsx(
+                "shrink-0 cursor-pointer text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                resolvedUrl
+                  ? "text-neutral-900 dark:text-neutral-100"
+                  : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100",
+              )}
             >
               Read
             </button>
           )}
         </form>
+        {article && (
+          <a
+            href={normalizeUrl(url)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-neutral-400 transition-colors hover:text-neutral-900 dark:hover:text-neutral-100"
+          >
+            Source ↗
+          </a>
+        )}
       </header>
 
       <main className="mx-auto max-w-prose px-4 py-12">
