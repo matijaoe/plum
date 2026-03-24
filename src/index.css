@@ -3,6 +3,7 @@
 
 html {
   overflow-y: scroll;
+  scroll-behavior: smooth;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--color-scrollbar) transparent;
@@ -105,6 +106,11 @@ html {
 }
 
 /* Links */
+.prose :where(h2, h3, h4) :where(a[href^="#"]) {
+  text-decoration: none;
+  color: inherit;
+}
+
 .prose :where(a) {
   color: inherit;
 }
@@ -143,6 +149,29 @@ html {
   margin-top: 1.25em;
 }
 
+/* Heading anchor indicator */
+.prose :where(h2[id], h3[id], h4[id]) {
+  position: relative;
+  scroll-margin-top: 4rem;
+}
+
+.prose :where(h2[id], h3[id], h4[id])::before {
+  content: "#";
+  position: absolute;
+  right: 100%;
+  padding-right: 0.375em;
+  font-family: var(--font-mono);
+  font-size: 1em;
+  color: var(--color-muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.prose :where(h2[id], h3[id], h4[id]):hover::before {
+  opacity: 1;
+}
+
 /* Code block language label */
 .prose :where(pre[data-language]) {
   position: relative;
@@ -155,8 +184,9 @@ html {
 .prose :where(pre[data-language])::before {
   content: attr(data-language);
   position: absolute;
-  top: 0.5rem;
-  right: 0.75rem;
+  top: 0;
+  right: 0;
+  padding: 0.625rem 0.875rem 1.5rem 2rem;
   font-family: var(--font-sans);
   font-size: 0.6rem;
   text-transform: uppercase;
@@ -165,6 +195,7 @@ html {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s ease;
+  background: linear-gradient(to bottom left, var(--color-elevated) 20%, transparent 70%);
 }
 
 /* Shiki dual-theme support */

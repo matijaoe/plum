@@ -28,7 +28,8 @@ function StopIcon() {
   );
 }
 
-const buttonClass = "shrink-0 cursor-pointer text-sm text-muted transition-colors hover:text-foreground";
+const buttonClass =
+  "shrink-0 cursor-pointer text-sm text-muted transition-colors hover:text-foreground";
 const activeClass = "shrink-0 cursor-pointer text-sm text-foreground transition-colors";
 
 function extractText(html: string): string {

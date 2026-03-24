@@ -27,7 +27,59 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     if (!el) {
       return;
     }
+
+    // Resolve source origin+pathname for matching full-URL heading anchors
+    let sourceOriginPath = "";
+    try {
+      const parsed = new URL(sourceUrl);
+      sourceOriginPath = parsed.origin + parsed.pathname.replace(/\/$/, "");
+    } catch {
+      // ignore
+    }
+
+    // Rewrite heading anchor links to local fragments
+    const headingAnchors = new Set<Element>();
+    for (const heading of el.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
+      const anchor = heading.querySelector(":scope > a[href]");
+      if (!anchor) {
+        continue;
+      }
+
+      const href = anchor.getAttribute("href") ?? "";
+      let fragment = "";
+
+      if (href.startsWith("#")) {
+        fragment = href.slice(1);
+      } else if (href.includes("#") && sourceOriginPath) {
+        try {
+          const linkUrl = new URL(href);
+          const linkOriginPath = linkUrl.origin + linkUrl.pathname.replace(/\/$/, "");
+          if (linkOriginPath === sourceOriginPath && linkUrl.hash) {
+            fragment = linkUrl.hash.slice(1);
+          }
+        } catch {
+          // not a valid URL, skip
+        }
+      }
+
+      if (!fragment) {
+        continue;
+      }
+
+      if (!heading.id) {
+        heading.id = decodeURIComponent(fragment);
+      }
+
+      anchor.setAttribute("href", `#${heading.id}`);
+      anchor.removeAttribute("target");
+      anchor.removeAttribute("rel");
+      headingAnchors.add(anchor);
+    }
+
     for (const link of el.querySelectorAll("a[href]")) {
+      if (headingAnchors.has(link)) {
+        continue;
+      }
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
     }
@@ -37,7 +89,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       highlightCodeBlocks(el, controller.signal),
     );
     return () => controller.abort();
-  }, [article]);
+  }, [article, sourceUrl]);
 
   return (
     <article dir={article.dir ?? undefined} lang={article.lang ?? undefined}>
