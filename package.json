@@ -13,6 +13,8 @@
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "@tanstack/react-query": "^5.95.2",
+    "agentation": "^3.0.1",
+    "agentation-mcp": "^1.2.0",
     "clsx": "^2.1.1",
     "dompurify": "^3.3.3",
     "ofetch": "^1.5.1",

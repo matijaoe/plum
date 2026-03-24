@@ -132,7 +132,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
 
       <div
         ref={proseRef}
-        className="prose prose-lg mt-8 max-w-none font-serif text-pretty"
+        className="prose prose-lg mt-8 max-w-none font-serif"
         dangerouslySetInnerHTML={{ __html: article.content }}
       />
     </article>

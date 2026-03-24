@@ -27,22 +27,22 @@ html {
   --color-blockquote-bar: #d6d3d1;
   --color-code-inline-bg: rgba(120, 120, 120, 0.08);
   --color-scrollbar: rgba(0, 0, 0, 0.15);
+  --color-link: #4a6d8c;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #131210;
-    --color-elevated: #1e1b19;
-    --color-foreground: #e7e5e4;
-    --color-prose: #d6d3d1;
-    --color-secondary: #a8a29e;
-    --color-muted: #57534e;
-    --color-border: #292524;
-    --color-border-subtle: rgba(255, 255, 255, 0.1);
-    --color-blockquote-bar: #44403c;
-    --color-code-inline-bg: rgba(200, 200, 200, 0.07);
-    --color-scrollbar: rgba(255, 255, 255, 0.12);
-  }
+:root.dark {
+  --color-background: #131210;
+  --color-elevated: #1e1b19;
+  --color-foreground: #e7e5e4;
+  --color-prose: #d6d3d1;
+  --color-secondary: #a8a29e;
+  --color-muted: #57534e;
+  --color-border: #292524;
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-blockquote-bar: #44403c;
+  --color-code-inline-bg: rgba(200, 200, 200, 0.07);
+  --color-scrollbar: rgba(255, 255, 255, 0.12);
+  --color-link: #7ca3c4;
 }
 
 @theme inline {
@@ -64,6 +64,7 @@ html {
 
 .prose :where(h1, h2, h3, h4) {
   color: var(--color-foreground);
+  text-wrap: balance;
 }
 
 .prose :where(strong) {
@@ -112,15 +113,19 @@ html {
 }
 
 .prose :where(a) {
-  color: inherit;
+  color: var(--color-link);
+  font-weight: inherit;
+  text-decoration: none;
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .prose :where(a:visited) {
-  color: inherit;
+  color: var(--color-link);
 }
 
 .prose :where(a:hover) {
-  color: var(--color-foreground);
+  text-decoration: underline;
 }
 
 /* List markers */
@@ -151,11 +156,14 @@ html {
 
 /* Heading anchor indicator */
 .prose :where(h2[id], h3[id], h4[id]) {
-  position: relative;
   scroll-margin-top: 4rem;
 }
 
-.prose :where(h2[id], h3[id], h4[id])::before {
+.prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"]) {
+  position: relative;
+}
+
+.prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"])::before {
   content: "#";
   position: absolute;
   right: 100%;
@@ -168,7 +176,7 @@ html {
   pointer-events: none;
 }
 
-.prose :where(h2[id], h3[id], h4[id]):hover::before {
+.prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"]):hover::before {
   opacity: 1;
 }
 
@@ -204,16 +212,31 @@ html {
   background-color: transparent !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .shiki span {
-    color: var(--shiki-dark);
-  }
+:root.dark .shiki span {
+  color: var(--shiki-dark);
 }
 
 /* Images */
+.prose :where(figure) {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .prose :where(img) {
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.5em;
+}
+
+.prose :where(figcaption) {
+  display: table-caption;
+  caption-side: bottom;
+  font-size: 0.75em;
+  margin-top: 0;
+  text-align: center;
 }
 
 /* Code blocks */
@@ -240,4 +263,33 @@ html {
 .prose :where(:not(pre) > code)::before,
 .prose :where(:not(pre) > code)::after {
   content: none;
+}
+
+/* Tables */
+.prose :where(table) {
+  width: auto;
+  border-collapse: collapse;
+  font-size: 0.875em;
+  font-family: var(--font-sans);
+}
+
+.prose :where(th) {
+  color: var(--color-foreground);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.625em 1em;
+  border: 1px solid var(--color-border);
+}
+
+.prose :where(td) {
+  padding: 0.625em 1em;
+  border: 1px solid var(--color-border);
+}
+
+.prose :where(thead) {
+  border-bottom: none;
+}
+
+.prose :where(tbody tr) {
+  border-bottom: none;
 }
