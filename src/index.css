@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
 html {
   overflow-y: scroll;
   scroll-behavior: smooth;
