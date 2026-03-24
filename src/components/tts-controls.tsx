@@ -1,7 +1,6 @@
 import clsx from "clsx";
-import { useMemo } from "react";
-import { useTts } from "../hooks/use-tts";
-import { extractTextFromHtml } from "../tts-utils";
+import { useMemo, useState } from "react";
+import { useSpeech } from "react-text-to-speech";
 
 const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
 
@@ -34,26 +33,31 @@ const buttonClass =
 const activeClass =
   "shrink-0 cursor-pointer text-sm text-neutral-900 transition-colors hover:text-neutral-900 dark:text-neutral-100 dark:hover:text-neutral-100";
 
+function extractText(html: string): string {
+  const el = document.createElement("div");
+  el.innerHTML = html;
+  return el.innerText;
+}
+
 interface TtsControlsProps {
   articleHtml: string;
 }
 
 export function TtsControls({ articleHtml }: TtsControlsProps) {
-  const { speak, pause, resume, stop, status, supported, rate, setRate } = useTts();
+  const [rate, setRate] = useState(1);
+  const text = useMemo(() => extractText(articleHtml), [articleHtml]);
 
-  const text = useMemo(() => extractTextFromHtml(articleHtml), [articleHtml]);
-
-  if (!supported) {
-    return null;
-  }
+  const { speechStatus, start, pause, stop } = useSpeech({
+    text,
+    rate,
+    stableText: true,
+  });
 
   function handlePlayPause() {
-    if (status === "idle") {
-      speak(text);
-    } else if (status === "speaking") {
+    if (speechStatus === "started") {
       pause();
     } else {
-      resume();
+      start();
     }
   }
 
@@ -63,7 +67,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     setRate(RATES[nextIndex]);
   }
 
-  const isActive = status !== "idle";
+  const isActive = speechStatus === "started" || speechStatus === "paused";
 
   return (
     <div className="flex items-center gap-1.5">
@@ -71,9 +75,11 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
         type="button"
         onClick={handlePlayPause}
         className={isActive ? activeClass : buttonClass}
-        aria-label={status === "speaking" ? "Pause" : status === "paused" ? "Resume" : "Listen"}
+        aria-label={
+          speechStatus === "started" ? "Pause" : speechStatus === "paused" ? "Resume" : "Listen"
+        }
       >
-        {status === "speaking" ? <PauseIcon /> : <PlayIcon />}
+        {speechStatus === "started" ? <PauseIcon /> : <PlayIcon />}
       </button>
 
       {isActive && (

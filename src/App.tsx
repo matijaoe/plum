@@ -1,12 +1,17 @@
 import clsx from "clsx";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TtsControls } from "./components/tts-controls";
 import type { Article } from "./reader";
 import { fetchArticle, normalizeUrl } from "./reader";
 import { formatDate } from "./utils";
 
+function getInitialUrl(): string {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("url") ?? "";
+}
+
 function App() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(getInitialUrl);
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -26,91 +31,72 @@ function App() {
     }
   }, [url]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!resolvedUrl || loading) {
-      return;
-    }
+  const loadArticle = useCallback(async (articleUrl: string) => {
     setLoading(true);
     setError(false);
     setArticle(null);
     try {
-      const result = await fetchArticle(resolvedUrl);
+      const result = await fetchArticle(articleUrl);
       setArticle(result);
+      const params = new URLSearchParams(window.location.search);
+      params.set("url", articleUrl);
+      window.history.replaceState(null, "", `?${params.toString()}`);
     } catch (err) {
       console.error("Article extraction failed:", err);
       setError(true);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resolvedUrl || loading) {
+      return;
+    }
+    await loadArticle(resolvedUrl);
   }
 
   function handleClear() {
     setArticle(null);
     setError(false);
     setUrl("");
+    window.history.replaceState(null, "", window.location.pathname);
     inputRef.current?.focus();
   }
+
+  const initialFetchDone = useRef(false);
+  useEffect(() => {
+    if (initialFetchDone.current) {
+      return;
+    }
+    initialFetchDone.current = true;
+    const initial = getInitialUrl();
+    if (initial) {
+      void loadArticle(initial);
+    }
+  }, [loadArticle]);
 
   useEffect(() => {
     const el = proseRef.current;
     if (!el) {
       return;
     }
-
-    const blocks = el.querySelectorAll("pre > code");
-    if (blocks.length === 0) {
-      return;
+    for (const link of el.querySelectorAll("a[href]")) {
+      link.setAttribute("target", "_blank");
+      link.setAttribute("rel", "noopener noreferrer");
     }
 
-    let cancelled = false;
-
-    async function highlight() {
-      const { codeToHtml } = await import("shiki");
-
-      for (const code of blocks) {
-        if (cancelled) {
-          return;
-        }
-        const pre = code.parentElement as HTMLElement;
-        const lang = [...code.classList]
-          .find((c) => c.startsWith("language-"))
-          ?.replace("language-", "");
-
-        if (lang) {
-          pre.dataset.language = lang;
-        }
-
-        const text = code.textContent ?? "";
-        try {
-          const html = await codeToHtml(text, {
-            lang: lang ?? "text",
-            themes: { light: "github-light", dark: "github-dark" },
-          });
-          const wrapper = document.createElement("div");
-          wrapper.innerHTML = html;
-          const newPre = wrapper.querySelector("pre");
-          if (newPre) {
-            if (lang) {
-              newPre.dataset.language = lang;
-            }
-            pre.replaceWith(newPre);
-          }
-        } catch {
-          // Language not supported — keep original unstyled block
-        }
-      }
-    }
-
-    highlight();
-    return () => {
-      cancelled = true;
-    };
+    const controller = new AbortController();
+    import("./highlight").then(({ highlightCodeBlocks }) =>
+      highlightCodeBlocks(el, controller.signal),
+    );
+    return () => controller.abort();
   }, [article]);
 
   return (
     <div className="min-h-screen font-sans text-neutral-900 dark:text-neutral-100">
-      <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-[#FDFBF7] px-4 py-2 dark:border-neutral-800 dark:bg-[#141210]">
+      <header className="sticky top-0 z-10 flex items-center gap-4 border-b border-neutral-200 bg-[#FDFBF7] px-4 py-2 dark:border-white/[0.08] dark:bg-[#141210]">
         {article ? (
           <div className="w-0 flex-1">
             <TtsControls articleHtml={article.content} />
@@ -136,22 +122,22 @@ function App() {
             <button
               type="button"
               onClick={handleClear}
-              className="shrink-0 cursor-pointer pl-3 text-sm lowercase text-neutral-500 transition-colors hover:text-neutral-900 hover:underline dark:hover:text-neutral-100"
+              className="shrink-0 cursor-pointer pl-3 font-mono text-xs text-neutral-400 transition-colors hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
-              Clear
+              clear
             </button>
           ) : (
             <button
               type="submit"
               disabled={loading || !resolvedUrl}
               className={clsx(
-                "shrink-0 cursor-pointer pl-3 text-sm lowercase transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-40",
+                "shrink-0 cursor-pointer pl-3 font-mono text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                 resolvedUrl
                   ? "text-neutral-900 dark:text-neutral-100"
                   : "text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100",
               )}
             >
-              Read
+              read
             </button>
           )}
         </form>
@@ -161,7 +147,7 @@ function App() {
               href={normalizeUrl(url)}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 text-sm lowercase text-neutral-400 transition-colors hover:text-neutral-900 hover:underline dark:hover:text-neutral-100"
+              className="shrink-0 font-mono text-xs text-neutral-400 transition-colors hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
             >
               source ↗
             </a>

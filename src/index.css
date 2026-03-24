@@ -9,7 +9,82 @@ html {
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
-  --font-mono: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+/* Blockquotes */
+.prose :where(blockquote) {
+  color: #57534e;
+  border-left: none;
+  position: relative;
+  padding-left: 1.25em;
+}
+
+.prose :where(blockquote)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 9999px;
+  background-color: #d6d0c8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(blockquote) {
+    color: #b0aaa4;
+  }
+
+  .prose :where(blockquote)::before {
+    background-color: #44403c;
+  }
+}
+
+/* Links */
+.prose :where(a:visited) {
+  color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(a) {
+    color: #b0aaa4;
+  }
+
+  .prose :where(a:hover) {
+    color: #d6d3d1;
+  }
+
+  .prose :where(a:visited) {
+    color: inherit;
+  }
+}
+
+/* List markers */
+.prose :where(ul > li)::marker {
+  color: #a8a29e;
+}
+
+.prose :where(ol > li)::marker {
+  color: #a8a29e;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(ul > li)::marker,
+  .prose :where(ol > li)::marker {
+    color: #57534e;
+  }
+}
+
+/* Horizontal rules */
+.prose :where(hr) {
+  border-color: #e7e5e4;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose :where(hr) {
+    border-color: #292524;
+  }
 }
 
 .prose :where(h2) {
@@ -32,50 +107,74 @@ html {
   position: relative;
 }
 
+.prose :where(pre[data-language]):hover::before {
+  opacity: 1;
+}
+
 .prose :where(pre[data-language])::before {
   content: attr(data-language);
   position: absolute;
   top: 0.5rem;
   right: 0.75rem;
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #a8a29e;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
-/* Code blocks */
-.prose :where(pre) {
-  background-color: #f5f5f4;
-  border: 1px solid #d6d3d1;
-  border-radius: 0.5rem;
-  color: #292524;
-  padding: 0.75rem 1rem;
+/* Shiki dual-theme support */
+.shiki span {
+  color: var(--shiki-light);
+  background-color: transparent !important;
 }
 
 @media (prefers-color-scheme: dark) {
-  .prose :where(pre) {
-    background-color: #1c1917;
-    border-color: #44403c;
+  .shiki span {
+    color: var(--shiki-dark);
+  }
+}
+
+/* Code blocks */
+.prose pre {
+  background-color: #f8f6f1 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  line-height: 1.5;
+  color: #292524;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose pre {
+    background-color: #1c1917 !important;
+    border-color: rgba(255, 255, 255, 0.1);
     color: #e7e5e4;
   }
 }
 
 /* Inline code */
 .prose :where(:not(pre) > code) {
-  background-color: #f5f5f4;
-  border: 1px solid #d6d3d1;
+  background-color: rgba(120, 120, 120, 0.08);
+  border: none;
   border-radius: 0.25rem;
-  padding: 0.125em 0.3em;
-  font-size: 0.875em;
-  color: #292524;
+  padding: 0.1em 0.25em;
+  font-size: 0.8em;
+  font-weight: normal;
+  color: inherit;
+  opacity: 0.92;
+}
+
+.prose :where(:not(pre) > code)::before,
+.prose :where(:not(pre) > code)::after {
+  content: none;
 }
 
 @media (prefers-color-scheme: dark) {
   .prose :where(:not(pre) > code) {
-    background-color: #1c1917;
-    border-color: #44403c;
-    color: #e7e5e4;
+    background-color: rgba(200, 200, 200, 0.07);
   }
 }
