@@ -1,12 +1,15 @@
 import clsx from "clsx";
 import { Pause, Play, Stop } from "@phosphor-icons/react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
 
 const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
 
-const buttonClass = "shrink-0 cursor-pointer text-muted transition-colors hover:text-foreground";
-const activeClass = "shrink-0 cursor-pointer text-foreground transition-colors";
+const buttonBase =
+  "shrink-0 cursor-pointer px-1 py-2 transition-colors focus:outline-none focus:ring-0 focus:shadow-none";
+const buttonClass = `${buttonBase} text-muted hover:text-foreground`;
+const activeClass = `${buttonBase} text-foreground`;
 
 function extractText(html: string): string {
   const el = document.createElement("div");
@@ -43,6 +46,11 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
   }
 
   const isActive = speechStatus === "started" || speechStatus === "paused";
+
+  useHotkey("Space", handlePlayPause, {
+    enabled: isActive,
+    preventDefault: true,
+  });
 
   return (
     <div className="flex items-center gap-2.5">
