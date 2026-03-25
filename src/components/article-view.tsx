@@ -1,4 +1,9 @@
+import { ArrowLeft, ArrowRight, DownloadSimple, X } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef } from "react";
+import Lightbox from "yet-another-react-lightbox";
+import Download from "yet-another-react-lightbox/plugins/download";
+import "yet-another-react-lightbox/styles.css";
+import { useArticleLightbox } from "../hooks/use-article-lightbox";
 import type { Article } from "../reader";
 import { formatDate } from "../utils";
 
@@ -21,6 +26,8 @@ interface ArticleViewProps {
 export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
+  const { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick } =
+    useArticleLightbox(article);
 
   useEffect(() => {
     const el = proseRef.current;
@@ -126,7 +133,8 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <img
           src={article.ogImage}
           alt=""
-          className="mt-8 w-full rounded-lg border border-border-subtle"
+          className="mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          onClick={() => openLightbox(article.ogImage!)}
         />
       )}
 
@@ -134,7 +142,33 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         ref={proseRef}
         className="prose prose-lg mt-8 max-w-none font-serif"
         dangerouslySetInnerHTML={{ __html: article.content }}
+        onClick={handleProseClick}
       />
+
+      {slides.length > 0 && (
+        <Lightbox
+          open={open}
+          close={() => setOpen(false)}
+          index={index}
+          on={{ view: ({ index: i }) => setIndex(i) }}
+          slides={slides}
+          plugins={[Download]}
+          animation={{ fade: 250, swipe: 350 }}
+          carousel={{ finite: true }}
+          controller={{ closeOnBackdropClick: true }}
+          render={{
+            iconClose: () => <X size={18} weight="bold" />,
+            iconDownload: () => <DownloadSimple size={18} weight="bold" />,
+            iconPrev: () => <ArrowLeft size={18} weight="bold" />,
+            iconNext: () => <ArrowRight size={18} weight="bold" />,
+            ...(slides.length <= 1 && {
+              buttonPrev: () => null,
+              buttonNext: () => null,
+            }),
+          }}
+          className="yarl-plum"
+        />
+      )}
     </article>
   );
 }

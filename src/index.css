@@ -306,3 +306,38 @@ html {
 .prose :where(tbody tr) {
   border-bottom: none;
 }
+
+/* ─── Lightbox (YARL) ─── */
+.yarl-plum {
+  --yarl__color_backdrop: rgba(253, 251, 247, 0.98);
+  --yarl__fade_animation_duration: 0.2s;
+  --yarl__fade_animation_timing_function: ease-out;
+  --yarl__color_button: var(--color-muted);
+  --yarl__color_button_active: var(--color-foreground);
+}
+
+:root.dark .yarl-plum {
+  --yarl__color_backdrop: rgba(19, 18, 16, 0.99);
+}
+
+.yarl-plum .yarl__slide {
+  padding: 16px 64px;
+}
+
+.yarl-plum .yarl__button {
+  filter: none;
+}
+
+.yarl-plum .yarl__navigation_prev,
+.yarl-plum .yarl__navigation_next {
+  padding: 24px 16px;
+}
+
+.yarl-plum .yarl__navigation_prev:disabled,
+.yarl-plum .yarl__navigation_next:disabled {
+  display: none;
+}
+
+.prose :where(img) {
+  cursor: zoom-in;
+}
