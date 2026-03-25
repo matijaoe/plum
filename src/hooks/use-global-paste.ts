@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { validateUrl } from "../reader";
 
 export function useGlobalPaste(onUrl: (url: string) => void) {
@@ -12,6 +13,8 @@ export function useGlobalPaste(onUrl: (url: string) => void) {
       if (normalized) {
         e.preventDefault();
         onUrl(text.trim());
+      } else {
+        toast("Not a valid link");
       }
     }
 

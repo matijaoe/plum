@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { validateUrl } from "../reader";
 
 export function useGlobalDrop(onUrl: (url: string) => void) {
@@ -33,11 +34,14 @@ export function useGlobalDrop(onUrl: (url: string) => void) {
       const text =
         e.dataTransfer?.getData("text/uri-list") || e.dataTransfer?.getData("text/plain");
       if (!text) {
+        toast("Couldn't read the dropped item");
         return;
       }
       const normalized = validateUrl(text);
       if (normalized) {
         onUrl(text.trim());
+      } else {
+        toast("Not a valid link");
       }
     }
 

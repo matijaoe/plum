@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { Plus } from "@phosphor-icons/react";
 import { useCallback } from "react";
 import { ArticleView } from "./components/article-view";
+import { TableOfContents } from "./components/table-of-contents";
 import { DragOverlay } from "./components/drag-overlay";
 import { DropZone } from "./components/drop-zone";
 import { ThemeToggle } from "./components/theme-toggle";
@@ -13,7 +14,7 @@ import { useGlobalDrop } from "./hooks/use-global-drop";
 import { useGlobalPaste } from "./hooks/use-global-paste";
 
 function App() {
-  const { article, error, sourceUrl, submitUrl, clear } = useArticle();
+  const { article, sourceUrl, submitUrl, clear } = useArticle();
   useGlobalPaste(submitUrl);
   const { isDragging } = useGlobalDrop(submitUrl);
   useDoubleEscape(
@@ -56,6 +57,7 @@ function App() {
       {article && sourceUrl ? (
         <>
           {isDragging && <DragOverlay />}
+          <TableOfContents article={article} />
           <main
             className={clsx(
               "mx-auto max-w-prose px-4 pt-12 pb-24",
@@ -72,12 +74,6 @@ function App() {
       ) : !sourceUrl ? (
         <DropZone isDragging={isDragging} onUrl={submitUrl} />
       ) : null}
-
-      {error && !article && (
-        <p className="fixed bottom-8 left-1/2 -translate-x-1/2 text-sm text-muted">
-          Could not extract article content.
-        </p>
-      )}
 
       {import.meta.env.DEV && <Agentation />}
     </div>
