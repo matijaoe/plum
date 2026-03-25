@@ -68,6 +68,9 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       return;
     }
 
+    // Start every new article from the top instantly
+    window.scrollTo({ top: 0, behavior: "instant" });
+
     // Rewrite heading anchor links to local fragments
     const headingAnchors = new Set<Element>();
     for (const heading of el.querySelectorAll("h1, h2, h3, h4, h5, h6")) {

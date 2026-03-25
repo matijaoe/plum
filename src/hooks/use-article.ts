@@ -41,8 +41,9 @@ export function useArticle() {
 
     if (submittedUrl) {
       const params = new URLSearchParams(window.location.search);
+      const hash = params.get("url") === submittedUrl ? window.location.hash : "";
       params.set("url", submittedUrl);
-      window.history.replaceState(null, "", `?${params.toString()}${window.location.hash}`);
+      window.history.replaceState(null, "", `?${params.toString()}${hash}`);
     } else if (isRestoringRef.current) {
       // Error recovery — don't create history entry
       isRestoringRef.current = false;
