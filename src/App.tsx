@@ -35,7 +35,7 @@ function App() {
           isDragging && "opacity-0 transition-opacity duration-200",
         )}
       >
-        {article ? (
+        {sourceUrl ? (
           <button
             type="button"
             onClick={clear}

@@ -1,4 +1,5 @@
 import { Circle, CircleHalf } from "@phosphor-icons/react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
@@ -9,6 +10,8 @@ export function ThemeToggle() {
     const next = { system: "light", light: "dark", dark: "system" } as const;
     setTheme(next[(theme as keyof typeof next) ?? "system"]);
   };
+
+  useHotkey("Mod+J", cycleTheme, { preventDefault: true });
 
   return (
     <button

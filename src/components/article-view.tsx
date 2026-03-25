@@ -176,7 +176,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <span className="ml-1.5 opacity-70">↗</span>
       </a>
 
-      <h1 className="font-serif text-3xl font-normal leading-[1.15] text-balance text-foreground sm:text-4xl lg:text-[2.75rem]">
+      <h1 className="font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl">
         {article.title}
       </h1>
 

@@ -393,4 +393,6 @@ html {
   box-shadow: none;
   backdrop-filter: blur(12px);
   background: color-mix(in srgb, var(--color-background) 80%, transparent);
+  text-align: center;
+  justify-content: center;
 }

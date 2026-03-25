@@ -47,9 +47,15 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
 
   const isActive = speechStatus === "started" || speechStatus === "paused";
 
+  useHotkey("L", () => (isActive ? stop() : start()));
+
   useHotkey("Space", handlePlayPause, {
     enabled: isActive,
     preventDefault: true,
+  });
+
+  useHotkey("Escape", () => stop(), {
+    enabled: isActive,
   });
 
   return (
