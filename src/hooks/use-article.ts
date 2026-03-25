@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fetchArticle, normalizeUrl, validateUrl } from "../reader";
@@ -15,6 +15,7 @@ export function useArticle() {
   const isRestoringRef = useRef(false);
   const confirmedRef = useRef(!!getInitialUrl());
   const prevUrlRef = useRef<string | null>(null);
+  const wasClearedRef = useRef(false);
 
   const {
     data: article = null,
@@ -24,7 +25,9 @@ export function useArticle() {
     queryKey: ["article", submittedUrl],
     queryFn: () => fetchArticle(submittedUrl!),
     enabled: !!submittedUrl,
-    placeholderData: keepPreviousData,
+    // Keep the previous article visible during article-to-article transitions,
+    // but suppress it after an explicit clear so stale content never flashes.
+    placeholderData: (prev) => (wasClearedRef.current ? undefined : prev),
   });
 
   // Keep URL bar in sync
@@ -52,6 +55,13 @@ export function useArticle() {
       window.history.pushState(null, "", window.location.pathname);
     }
   }, [submittedUrl]);
+
+  // Reset cleared flag once a new article actually loads
+  useEffect(() => {
+    if (article && submittedUrl) {
+      wasClearedRef.current = false;
+    }
+  }, [article, submittedUrl]);
 
   // Create history entry when article successfully loads
   useEffect(() => {
@@ -105,6 +115,7 @@ export function useArticle() {
 
   const clear = useCallback(() => {
     prevUrlRef.current = null;
+    wasClearedRef.current = true;
     setSubmittedUrl(null);
   }, []);
 
