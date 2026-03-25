@@ -1,4 +1,4 @@
-# Reader
+# Plum
 
 A client-side reader mode app. Paste any article URL and get a clean, distraction-free view.
 
