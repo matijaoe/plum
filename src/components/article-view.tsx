@@ -18,6 +18,39 @@ function parseSourceParts(url: string): { host: string; path: string } {
   }
 }
 
+/**
+ * If `href` points to a fragment on the same page as `sourceUrl`, return the
+ * fragment (without the leading `#`). Handles bare fragments (`#fn1`),
+ * absolute URLs, and relative URLs resolved against `sourceUrl`.
+ */
+function extractLocalFragment(href: string, sourceUrl: string): string | null {
+  if (href.startsWith("#")) {
+    return href.slice(1);
+  }
+
+  if (!href.includes("#")) {
+    return null;
+  }
+
+  try {
+    // Resolve relative hrefs (e.g. "./post#fn1") against the source URL
+    const linkUrl = new URL(href, sourceUrl);
+    const sourceParsed = new URL(sourceUrl);
+
+    const samePage =
+      linkUrl.origin === sourceParsed.origin &&
+      linkUrl.pathname.replace(/\/$/, "") === sourceParsed.pathname.replace(/\/$/, "");
+
+    if (samePage && linkUrl.hash) {
+      return linkUrl.hash.slice(1);
+    }
+  } catch {
+    // not a valid URL
+  }
+
+  return null;
+}
+
 interface ArticleViewProps {
   article: Article;
   sourceUrl: string;
@@ -35,15 +68,6 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       return;
     }
 
-    // Resolve source origin+pathname for matching full-URL heading anchors
-    let sourceOriginPath = "";
-    try {
-      const parsed = new URL(sourceUrl);
-      sourceOriginPath = parsed.origin + parsed.pathname.replace(/\/$/, "");
-    } catch {
-      // ignore
-    }
-
     // Rewrite heading anchor links to local fragments
     const headingAnchors = new Set<Element>();
     for (const heading of el.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
@@ -52,23 +76,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         continue;
       }
 
-      const href = anchor.getAttribute("href") ?? "";
-      let fragment = "";
-
-      if (href.startsWith("#")) {
-        fragment = href.slice(1);
-      } else if (href.includes("#") && sourceOriginPath) {
-        try {
-          const linkUrl = new URL(href);
-          const linkOriginPath = linkUrl.origin + linkUrl.pathname.replace(/\/$/, "");
-          if (linkOriginPath === sourceOriginPath && linkUrl.hash) {
-            fragment = linkUrl.hash.slice(1);
-          }
-        } catch {
-          // not a valid URL, skip
-        }
-      }
-
+      const fragment = extractLocalFragment(anchor.getAttribute("href") ?? "", sourceUrl);
       if (!fragment) {
         continue;
       }
@@ -83,38 +91,62 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       headingAnchors.add(anchor);
     }
 
+    // Ensure all h2-h4 headings have IDs and anchor links for TOC navigation
+    const usedIds = new Set<string>(Array.from(el.querySelectorAll("[id]"), (e) => e.id));
+    for (const heading of el.querySelectorAll("h2, h3, h4")) {
+      if (!heading.id) {
+        let base = (heading.textContent?.trim() ?? "")
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^\w-]/g, "");
+        if (!base) {
+          continue;
+        }
+        let id = base;
+        let n = 1;
+        while (usedIds.has(id)) {
+          id = `${base}-${n++}`;
+        }
+        heading.id = id;
+        usedIds.add(id);
+      }
+
+      // Inject anchor link if the heading doesn't already have one
+      if (!heading.querySelector(":scope > a[href^='#']")) {
+        const anchor = document.createElement("a");
+        anchor.href = `#${heading.id}`;
+        while (heading.firstChild) {
+          anchor.appendChild(heading.firstChild);
+        }
+        heading.appendChild(anchor);
+        headingAnchors.add(anchor);
+      }
+    }
+
     for (const link of el.querySelectorAll("a[href]")) {
       if (headingAnchors.has(link)) {
         continue;
       }
 
-      const href = link.getAttribute("href") ?? "";
-
-      // Rewrite any internal anchor link to a local fragment
-      if (href.startsWith("#")) {
+      const fragment = extractLocalFragment(link.getAttribute("href") ?? "", sourceUrl);
+      if (fragment != null) {
+        link.setAttribute("href", `#${fragment}`);
         link.removeAttribute("target");
         link.removeAttribute("rel");
         continue;
       }
 
-      // Rewrite full URLs pointing back to the same article with a fragment
-      if (sourceOriginPath && href.includes("#")) {
-        try {
-          const linkUrl = new URL(href);
-          const linkOriginPath = linkUrl.origin + linkUrl.pathname.replace(/\/$/, "");
-          if (linkOriginPath === sourceOriginPath && linkUrl.hash) {
-            link.setAttribute("href", linkUrl.hash);
-            link.removeAttribute("target");
-            link.removeAttribute("rel");
-            continue;
-          }
-        } catch {
-          // not a valid URL, fall through to external link handling
-        }
-      }
-
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
+    }
+
+    // Restore scroll position if the URL has a fragment (e.g. after refresh)
+    if (window.location.hash) {
+      const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+      if (target) {
+        // Jump instantly — smooth scroll would land wrong while layout is still settling
+        requestAnimationFrame(() => target.scrollIntoView({ behavior: "instant" }));
+      }
     }
 
     const controller = new AbortController();
