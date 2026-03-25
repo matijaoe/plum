@@ -19,6 +19,8 @@ export function TableOfContents({ article }: TableOfContentsProps) {
         headingsOffset: 40,
         scrollSmooth: false,
         hasInnerContainers: true,
+        scrollHandlerType: "throttle",
+        throttleTimeout: 0,
       });
     });
 

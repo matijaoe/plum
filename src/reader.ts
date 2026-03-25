@@ -33,7 +33,11 @@ export function validateUrl(raw: string): string | null {
   }
   try {
     const normalized = normalizeUrl(trimmed);
-    new URL(normalized);
+    const url = new URL(normalized);
+    // Require a dot in the hostname to filter out bare words like "hello"
+    if (!url.hostname.includes(".")) {
+      return null;
+    }
     return normalized;
   } catch {
     return null;

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fetchArticle, normalizeUrl, validateUrl } from "../reader";
@@ -9,19 +9,14 @@ function getInitialUrl(): string | null {
 }
 
 export function useArticle() {
+  const queryClient = useQueryClient();
   const [submittedUrl, setSubmittedUrl] = useState<string | null>(getInitialUrl);
   const isFirstRenderRef = useRef(true);
   const isPopstateRef = useRef(false);
-  const isRestoringRef = useRef(false);
   const confirmedRef = useRef(!!getInitialUrl());
-  const prevUrlRef = useRef<string | null>(null);
   const wasClearedRef = useRef(false);
 
-  const {
-    data: article = null,
-    isLoading: loading,
-    error,
-  } = useQuery({
+  const { data: article = null, isLoading: loading } = useQuery({
     queryKey: ["article", submittedUrl],
     queryFn: () => fetchArticle(submittedUrl!),
     enabled: !!submittedUrl,
@@ -47,10 +42,6 @@ export function useArticle() {
       const hash = params.get("url") === submittedUrl ? window.location.hash : "";
       params.set("url", submittedUrl);
       window.history.replaceState(null, "", `?${params.toString()}${hash}`);
-    } else if (isRestoringRef.current) {
-      // Error recovery — don't create history entry
-      isRestoringRef.current = false;
-      window.history.replaceState(null, "", window.location.pathname);
     } else {
       window.history.pushState(null, "", window.location.pathname);
     }
@@ -73,21 +64,6 @@ export function useArticle() {
     }
   }, [article, submittedUrl]);
 
-  // On error, restore previous URL and show toast
-  useEffect(() => {
-    if (!error) {
-      return;
-    }
-    const message =
-      error instanceof Error && error.message === "Failed to parse article"
-        ? "Couldn't extract article from this page"
-        : "Couldn't load this link";
-    toast(message);
-
-    isRestoringRef.current = true;
-    setSubmittedUrl(prevUrlRef.current);
-  }, [error]);
-
   // Handle browser back/forward
   useEffect(() => {
     function handlePopstate() {
@@ -102,26 +78,35 @@ export function useArticle() {
   }, []);
 
   const submitUrl = useCallback(
-    (raw: string) => {
+    async (raw: string) => {
       const normalized = validateUrl(raw);
-      if (normalized) {
-        prevUrlRef.current = submittedUrl;
+      if (!normalized) {
+        return;
+      }
+      try {
+        await queryClient.fetchQuery({
+          queryKey: ["article", raw.trim()],
+          queryFn: () => fetchArticle(raw.trim()),
+        });
         confirmedRef.current = false;
         setSubmittedUrl(raw.trim());
+      } catch (e) {
+        const message =
+          e instanceof Error && e.message === "Failed to parse article"
+            ? "Couldn't extract article from this page"
+            : "Couldn't load this link";
+        toast(message);
       }
     },
-    [submittedUrl],
+    [queryClient],
   );
 
   const clear = useCallback(() => {
-    prevUrlRef.current = null;
     wasClearedRef.current = true;
     setSubmittedUrl(null);
   }, []);
 
-  // Show the previous article's URL while a new one is loading
-  const displayUrl = article ? (submittedUrl ?? prevUrlRef.current) : submittedUrl;
-  const sourceUrl = displayUrl ? normalizeUrl(displayUrl) : null;
+  const sourceUrl = submittedUrl ? normalizeUrl(submittedUrl) : null;
 
   return {
     article,

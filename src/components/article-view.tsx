@@ -62,18 +62,14 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick } =
     useArticleLightbox(article);
 
-  useEffect(() => {
-    const el = proseRef.current;
-    if (!el) {
-      return;
-    }
+  // Pre-process article HTML: rewrite links, add heading IDs and anchors.
+  // Running this as a pure transform on the string (not a DOM side-effect)
+  // makes it immune to React re-renders or DOM recreation.
+  const processedContent = useMemo(() => {
+    const doc = new DOMParser().parseFromString(article.content, "text/html");
 
-    // Start every new article from the top instantly
-    window.scrollTo({ top: 0, behavior: "instant" });
-
-    // Rewrite heading anchor links to local fragments
     const headingAnchors = new Set<Element>();
-    for (const heading of el.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
+    for (const heading of doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
       const anchor = heading.querySelector(":scope > a[href]");
       if (!anchor) {
         continue;
@@ -94,9 +90,8 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       headingAnchors.add(anchor);
     }
 
-    // Ensure all h2-h4 headings have IDs and anchor links for TOC navigation
-    const usedIds = new Set<string>(Array.from(el.querySelectorAll("[id]"), (e) => e.id));
-    for (const heading of el.querySelectorAll("h2, h3, h4")) {
+    const usedIds = new Set<string>(Array.from(doc.querySelectorAll("[id]"), (e) => e.id));
+    for (const heading of doc.querySelectorAll("h2, h3, h4")) {
       if (!heading.id) {
         let base = (heading.textContent?.trim() ?? "")
           .toLowerCase()
@@ -114,9 +109,8 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         usedIds.add(id);
       }
 
-      // Inject anchor link if the heading doesn't already have one
       if (!heading.querySelector(":scope > a[href^='#']")) {
-        const anchor = document.createElement("a");
+        const anchor = doc.createElement("a");
         anchor.href = `#${heading.id}`;
         while (heading.firstChild) {
           anchor.appendChild(heading.firstChild);
@@ -126,7 +120,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       }
     }
 
-    for (const link of el.querySelectorAll("a[href]")) {
+    for (const link of doc.querySelectorAll("a[href]")) {
       if (headingAnchors.has(link)) {
         continue;
       }
@@ -143,13 +137,22 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       link.setAttribute("rel", "noopener noreferrer");
     }
 
-    // Restore scroll position if the URL has a fragment (e.g. after refresh)
+    return doc.body.innerHTML;
+  }, [article.content, sourceUrl]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+
     if (window.location.hash) {
       const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
       if (target) {
-        // Jump instantly — smooth scroll would land wrong while layout is still settling
         requestAnimationFrame(() => target.scrollIntoView({ behavior: "instant" }));
       }
+    }
+
+    const el = proseRef.current;
+    if (!el) {
+      return;
     }
 
     const controller = new AbortController();
@@ -157,7 +160,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       highlightCodeBlocks(el, controller.signal),
     );
     return () => controller.abort();
-  }, [article, sourceUrl]);
+  }, [article.content, sourceUrl]);
 
   return (
     <article dir={article.dir ?? undefined} lang={article.lang ?? undefined}>
@@ -202,7 +205,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       <div
         ref={proseRef}
         className="prose prose-lg mt-8 max-w-none font-serif"
-        dangerouslySetInnerHTML={{ __html: article.content }}
+        dangerouslySetInnerHTML={{ __html: processedContent }}
         onClick={handleProseClick}
       />
 

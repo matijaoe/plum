@@ -33,7 +33,7 @@ html {
   --color-blockquote-bar: #d6d3d1;
   --color-code-inline-bg: rgba(120, 120, 120, 0.08);
   --color-scrollbar: rgba(0, 0, 0, 0.15);
-  --color-link: #4a6d8c;
+  --color-link: #2563a0;
 }
 
 :root.dark {
@@ -388,11 +388,4 @@ html {
   --normal-text: var(--color-secondary);
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  border-radius: 9999px;
-  padding: 0.625rem 1.25rem;
-  box-shadow: none;
-  backdrop-filter: blur(12px);
-  background: color-mix(in srgb, var(--color-background) 80%, transparent);
-  text-align: center;
-  justify-content: center;
 }
