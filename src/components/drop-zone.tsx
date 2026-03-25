@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { ClipboardText } from "@phosphor-icons/react";
 import { validateUrl } from "../reader";
 import { getPlatformModifier } from "../utils";
 
@@ -24,28 +25,53 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center">
-      {/* Amber tint overlay on drag */}
+      {/* Full-page tint + border on drag */}
       <div
         className={clsx(
-          "pointer-events-none absolute inset-0 transition-colors duration-200",
-          isDragging ? "bg-amber-500/[0.04]" : "bg-transparent",
+          "pointer-events-none fixed inset-0 transition-all duration-300 ease-out",
+          isDragging ? "opacity-100" : "opacity-0",
         )}
-      />
+      >
+        <div className="absolute inset-4 rounded-2xl border-2 border-dashed border-foreground/15 bg-foreground/[0.025]" />
+      </div>
 
       {/* Content */}
-      <div className="relative flex flex-col items-center gap-5">
-        <div className="flex flex-col items-center gap-1.5">
-          <p className="text-sm text-foreground">Paste a link to read</p>
-          <p className="text-xs text-muted">
-            {isDragging ? "Drop to read" : `${modifier}V or drop here`}
+      <div
+        className={clsx(
+          "relative flex flex-col items-center gap-5 transition-transform duration-300 ease-out",
+          isDragging && "scale-[1.02]",
+        )}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <p
+            className={clsx(
+              "font-serif text-lg transition-colors duration-200",
+              isDragging ? "text-foreground" : "text-secondary",
+            )}
+          >
+            {isDragging ? "Drop to read" : "Paste a link to read"}
+          </p>
+          <p
+            className={clsx(
+              "text-xs text-muted transition-opacity duration-200",
+              isDragging ? "opacity-0" : "opacity-100",
+            )}
+          >
+            {modifier}V or drop here
           </p>
         </div>
 
         <button
           type="button"
           onClick={handlePasteClick}
-          className="cursor-pointer rounded-md border border-border bg-elevated px-4 py-1.5 font-mono text-xs text-secondary transition-colors hover:border-foreground hover:text-foreground"
+          className={clsx(
+            "flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs transition-all duration-200",
+            isDragging
+              ? "border-transparent opacity-0"
+              : "border-border text-secondary hover:border-secondary hover:text-foreground",
+          )}
         >
+          <ClipboardText size={14} />
           Paste
         </button>
       </div>

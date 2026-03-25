@@ -26,12 +26,22 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
-      <div className="fixed top-3 right-3 z-20">
+      <div
+        className={clsx(
+          "fixed top-3 right-3 z-20 transition-opacity duration-200",
+          isDragging && "opacity-0",
+        )}
+      >
         <ThemeToggle />
       </div>
 
       {article && (
-        <div className="fixed top-3 left-3 z-20">
+        <div
+          className={clsx(
+            "fixed top-3 left-3 z-20 transition-opacity duration-200",
+            isDragging && "opacity-0",
+          )}
+        >
           <button
             type="button"
             onClick={clear}
@@ -49,7 +59,7 @@ function App() {
           <main
             className={clsx(
               "mx-auto max-w-prose px-4 pt-12 pb-24",
-              isDragging && "opacity-40 transition-opacity",
+              isDragging && "opacity-50 transition-opacity duration-300",
             )}
           >
             <ArticleView article={article} sourceUrl={sourceUrl} />
