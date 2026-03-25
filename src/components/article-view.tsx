@@ -87,6 +87,32 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       if (headingAnchors.has(link)) {
         continue;
       }
+
+      const href = link.getAttribute("href") ?? "";
+
+      // Rewrite any internal anchor link to a local fragment
+      if (href.startsWith("#")) {
+        link.removeAttribute("target");
+        link.removeAttribute("rel");
+        continue;
+      }
+
+      // Rewrite full URLs pointing back to the same article with a fragment
+      if (sourceOriginPath && href.includes("#")) {
+        try {
+          const linkUrl = new URL(href);
+          const linkOriginPath = linkUrl.origin + linkUrl.pathname.replace(/\/$/, "");
+          if (linkOriginPath === sourceOriginPath && linkUrl.hash) {
+            link.setAttribute("href", linkUrl.hash);
+            link.removeAttribute("target");
+            link.removeAttribute("rel");
+            continue;
+          }
+        } catch {
+          // not a valid URL, fall through to external link handling
+        }
+      }
+
       link.setAttribute("target", "_blank");
       link.setAttribute("rel", "noopener noreferrer");
     }
