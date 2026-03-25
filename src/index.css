@@ -113,11 +113,6 @@ html {
 }
 
 /* Links */
-.prose :where(h2, h3, h4) :where(a[href^="#"]) {
-  text-decoration: none;
-  color: inherit;
-}
-
 .prose :where(a) {
   color: var(--color-link);
   font-weight: inherit;
@@ -132,6 +127,18 @@ html {
 
 .prose :where(a:hover) {
   text-decoration: underline;
+}
+
+/* Heading anchor links (self-referencing) — not styled as links */
+.prose :where(h2, h3, h4) :where(a[href^="#"]) {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.prose :where(h2, h3, h4) :where(a[href^="#"]):hover {
+  color: inherit;
+  text-decoration: none;
 }
 
 /* List markers */
@@ -162,7 +169,7 @@ html {
 
 /* Heading anchor indicator */
 .prose :where(h2[id], h3[id], h4[id]) {
-  scroll-margin-top: 4rem;
+  scroll-margin-top: 2rem;
 }
 
 .prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"]) {

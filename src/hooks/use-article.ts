@@ -1,29 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchArticle, normalizeUrl } from "../reader";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchArticle, normalizeUrl, validateUrl } from "../reader";
 
-function getInitialUrl(): string {
+function getInitialUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
-  return params.get("url") ?? "";
+  return params.get("url") || null;
 }
 
 export function useArticle() {
-  const [inputUrl, setInputUrl] = useState(getInitialUrl);
-  const [submittedUrl, setSubmittedUrl] = useState<string | null>(() => getInitialUrl() || null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const resolvedUrl = useMemo(() => {
-    const trimmed = inputUrl.trim();
-    if (!trimmed) {
-      return null;
-    }
-    try {
-      new URL(normalizeUrl(trimmed));
-      return trimmed;
-    } catch {
-      return null;
-    }
-  }, [inputUrl]);
+  const [submittedUrl, setSubmittedUrl] = useState<string | null>(getInitialUrl);
+  const isFirstRenderRef = useRef(true);
+  const isPopstateRef = useRef(false);
 
   const {
     data: article = null,
@@ -35,39 +22,56 @@ export function useArticle() {
     enabled: !!submittedUrl,
   });
 
+  // Sync URL bar — replaceState on first render, pushState after
   useEffect(() => {
+    if (isPopstateRef.current) {
+      isPopstateRef.current = false;
+      return;
+    }
+
+    const method = isFirstRenderRef.current ? "replaceState" : "pushState";
+    isFirstRenderRef.current = false;
+
     if (submittedUrl) {
       const params = new URLSearchParams(window.location.search);
       params.set("url", submittedUrl);
-      window.history.replaceState(null, "", `?${params.toString()}`);
+      window.history[method](null, "", `?${params.toString()}`);
     } else {
-      window.history.replaceState(null, "", window.location.pathname);
+      window.history[method](null, "", window.location.pathname);
     }
   }, [submittedUrl]);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!resolvedUrl || loading) {
-      return;
+  // Handle browser back/forward
+  useEffect(() => {
+    function handlePopstate() {
+      isPopstateRef.current = true;
+      const params = new URLSearchParams(window.location.search);
+      setSubmittedUrl(params.get("url") || null);
     }
-    setSubmittedUrl(resolvedUrl);
-  }
 
-  function handleClear() {
+    window.addEventListener("popstate", handlePopstate);
+    return () => window.removeEventListener("popstate", handlePopstate);
+  }, []);
+
+  const submitUrl = useCallback((raw: string) => {
+    const normalized = validateUrl(raw);
+    if (normalized) {
+      setSubmittedUrl(raw.trim());
+    }
+  }, []);
+
+  const clear = useCallback(() => {
     setSubmittedUrl(null);
-    setInputUrl("");
-    inputRef.current?.focus();
-  }
+  }, []);
+
+  const sourceUrl = submittedUrl ? normalizeUrl(submittedUrl) : null;
 
   return {
-    url: inputUrl,
-    setUrl: setInputUrl,
     article,
     loading,
     error,
-    resolvedUrl,
-    inputRef,
-    handleSubmit,
-    handleClear,
+    sourceUrl,
+    submitUrl,
+    clear,
   };
 }

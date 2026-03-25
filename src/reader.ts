@@ -26,6 +26,20 @@ export function normalizeUrl(raw: string): string {
   return `https://${raw}`;
 }
 
+export function validateUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const normalized = normalizeUrl(trimmed);
+    new URL(normalized);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
 function fixConcatenatedNames(byline: string): string {
   return byline.replace(/([a-z])([A-Z])/g, "$1, $2");
 }

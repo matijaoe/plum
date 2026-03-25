@@ -1,36 +1,12 @@
 import clsx from "clsx";
+import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
 
 const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
 
-function PlayIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-
-function PauseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6 19h4V5H6zm8-14v14h4V5z" />
-    </svg>
-  );
-}
-
-function StopIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M6 6h12v12H6z" />
-    </svg>
-  );
-}
-
-const buttonClass =
-  "shrink-0 cursor-pointer text-sm text-muted transition-colors hover:text-foreground";
-const activeClass = "shrink-0 cursor-pointer text-sm text-foreground transition-colors";
+const buttonClass = "shrink-0 cursor-pointer text-muted transition-colors hover:text-foreground";
+const activeClass = "shrink-0 cursor-pointer text-foreground transition-colors";
 
 function extractText(html: string): string {
   const el = document.createElement("div");
@@ -69,7 +45,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
   const isActive = speechStatus === "started" || speechStatus === "paused";
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2.5">
       <button
         type="button"
         onClick={handlePlayPause}
@@ -78,19 +54,23 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
           speechStatus === "started" ? "Pause" : speechStatus === "paused" ? "Resume" : "Listen"
         }
       >
-        {speechStatus === "started" ? <PauseIcon /> : <PlayIcon />}
+        {speechStatus === "started" ? (
+          <Pause size={15} weight="fill" />
+        ) : (
+          <Play size={15} weight="fill" />
+        )}
       </button>
 
       {isActive && (
         <button type="button" onClick={stop} className={buttonClass} aria-label="Stop">
-          <StopIcon />
+          <Stop size={15} weight="fill" />
         </button>
       )}
 
       <button
         type="button"
         onClick={handleRateCycle}
-        className={clsx("tabular-nums", isActive ? activeClass : buttonClass)}
+        className={clsx("text-xs tabular-nums", isActive ? activeClass : buttonClass)}
         aria-label={`Speed: ${rate}x`}
       >
         {rate}x
