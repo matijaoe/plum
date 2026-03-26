@@ -6,12 +6,14 @@ import { AnimatePresence, motion, LayoutGroup } from "motion/react";
 
 const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
 
+/** Higher damping for smooth layout morphing (compact ↔ expanded). */
 const spring = {
   type: "spring" as const,
   stiffness: 400,
   damping: 30,
 };
 
+/** Lower damping for snappy tap feedback on buttons. */
 const springTap = {
   type: "spring" as const,
   stiffness: 400,
@@ -21,7 +23,7 @@ const springTap = {
 function extractText(html: string): string {
   const el = document.createElement("div");
   el.innerHTML = html;
-  return el.innerText;
+  return el.textContent || "";
 }
 
 function PlayerControls({
@@ -113,10 +115,6 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     }
   }
 
-  function handleStop() {
-    stop();
-  }
-
   function handleRateCycle() {
     const currentIndex = RATES.indexOf(rate as (typeof RATES)[number]);
     const nextIndex = (currentIndex + 1) % RATES.length;
@@ -166,7 +164,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
               speechStatus={speechStatus}
               rate={rate}
               onPlayPause={handlePlayPause}
-              onStop={handleStop}
+              onStop={stop}
               onRateCycle={handleRateCycle}
             />
           </motion.div>

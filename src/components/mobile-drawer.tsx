@@ -17,7 +17,7 @@ const springTap = {
 function extractText(html: string): string {
   const el = document.createElement("div");
   el.innerHTML = html;
-  return el.innerText;
+  return el.textContent || "";
 }
 
 /** Animated equalizer bars — plays a looping CSS animation. */
@@ -65,10 +65,6 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
     } else {
       start();
     }
-  }
-
-  function handleStop() {
-    stop();
   }
 
   function handleRateCycle() {
@@ -177,7 +173,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
               {/* Stop */}
               <motion.button
                 type="button"
-                onClick={handleStop}
+                onClick={stop}
                 whileTap={{ scale: 0.93 }}
                 transition={springTap}
                 className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/35 transition-colors hover:text-white/60 focus:outline-none"
