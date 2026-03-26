@@ -65,7 +65,7 @@ function App() {
             <ArticleView article={article} sourceUrl={sourceUrl} />
           </main>
 
-          <div className="fixed bottom-4 left-4 z-20 rounded-full border border-border-subtle bg-background/80 px-4 py-0.5 backdrop-blur-md">
+          <div className="fixed bottom-4 left-4 z-20">
             <TtsControls articleHtml={article.content} />
           </div>
         </>
