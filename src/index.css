@@ -34,6 +34,7 @@ html {
   --color-code-inline-bg: rgba(120, 120, 120, 0.08);
   --color-scrollbar: rgba(0, 0, 0, 0.15);
   --color-link: #2563a0;
+  --color-player: #000000;
 }
 
 :root.dark {
@@ -49,6 +50,7 @@ html {
   --color-code-inline-bg: rgba(200, 200, 200, 0.07);
   --color-scrollbar: rgba(255, 255, 255, 0.12);
   --color-link: #7ca3c4;
+  --color-player: #000000;
 }
 
 @theme inline {
@@ -60,6 +62,7 @@ html {
   --color-muted: var(--color-muted);
   --color-border: var(--color-border);
   --color-border-subtle: var(--color-border-subtle);
+  --color-player: var(--color-player);
 }
 
 /* Prose palette */

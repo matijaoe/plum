@@ -2,10 +2,16 @@ import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, LayoutGroup } from "motion/react";
 import { Drawer } from "vaul";
 
 const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
+
+const spring = {
+  type: "spring" as const,
+  stiffness: 400,
+  damping: 30,
+};
 
 const springTap = {
   type: "spring" as const,
@@ -35,35 +41,7 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-/** Three animated bars that bounce when playing */
-function Equalizer({ paused, size = 14 }: { paused?: boolean; size?: number }) {
-  const barWidth = Math.max(2, Math.round(size / 5));
-  const gap = Math.max(2, Math.round(size / 6));
-
-  return (
-    <div className="flex items-end" style={{ height: size, gap }}>
-      {[1, 2, 3].map((i) => (
-        <motion.span
-          key={i}
-          className="rounded-full bg-white/80"
-          style={{ width: barWidth }}
-          animate={
-            paused
-              ? { height: barWidth }
-              : { height: [barWidth, size, size * 0.4, size * 0.85, barWidth] }
-          }
-          transition={
-            paused
-              ? { duration: 0.3 }
-              : { duration: 0.8 + i * 0.15, repeat: Infinity, ease: "easeInOut" }
-          }
-        />
-      ))}
-    </div>
-  );
-}
-
-function PlayerPanel({
+function PlayerControls({
   speechStatus,
   rate,
   onPlayPause,
@@ -78,38 +56,28 @@ function PlayerPanel({
   onRateCycle: () => void;
   large?: boolean;
 }) {
-  const isPaused = speechStatus === "paused";
-
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Status */}
-      <div className="flex items-center gap-2.5">
-        <Equalizer paused={isPaused} size={large ? 16 : 14} />
-        <span className="text-[11px] font-medium tracking-widest text-white/40 uppercase">
-          {isPaused ? "Paused" : "Playing"}
-        </span>
-      </div>
-
-      {/* Controls — speed | play/pause | stop */}
-      <div className="flex w-full items-center justify-between px-2">
-        {/* Speed */}
+    <div className="grid w-full grid-cols-3 items-center">
+      {/* Left — speed */}
+      <div className="flex justify-start">
         <motion.button
           type="button"
           onClick={onRateCycle}
           whileTap={{ scale: 0.93 }}
-          whileHover={{ scale: 1.04 }}
           transition={springTap}
           className={
             large
-              ? "flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[15px] font-semibold tabular-nums text-white/60 transition-colors hover:bg-white/15 hover:text-white/80 focus:outline-none"
-              : "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[13px] font-semibold tabular-nums text-white/60 transition-colors hover:bg-white/15 hover:text-white/80 focus:outline-none"
+              ? "flex h-11 cursor-pointer items-center justify-center rounded-full px-3 text-[13px] font-semibold tabular-nums text-white/45 transition-colors hover:bg-white/10 hover:text-white/70 focus:outline-none"
+              : "flex h-9 cursor-pointer items-center justify-center rounded-full px-2.5 text-[12px] font-semibold tabular-nums text-white/45 transition-colors hover:bg-white/10 hover:text-white/70 focus:outline-none"
           }
           aria-label={`Speed: ${rate}x`}
         >
           {rate}x
         </motion.button>
+      </div>
 
-        {/* Play / Pause */}
+      {/* Center — play/pause */}
+      <div className="flex justify-center">
         <motion.button
           type="button"
           onClick={onPlayPause}
@@ -118,33 +86,34 @@ function PlayerPanel({
           transition={springTap}
           className={
             large
-              ? "flex h-16 w-16 cursor-pointer items-center justify-center rounded-full bg-white text-black focus:outline-none"
-              : "flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-white text-black focus:outline-none"
+              ? "flex h-13 w-13 cursor-pointer items-center justify-center rounded-full bg-white text-black focus:outline-none"
+              : "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white text-black focus:outline-none"
           }
           aria-label={speechStatus === "started" ? "Pause" : "Resume"}
         >
           {speechStatus === "started" ? (
-            <Pause size={large ? 28 : 24} weight="fill" />
+            <Pause size={large ? 24 : 20} weight="fill" />
           ) : (
-            <Play size={large ? 28 : 24} weight="fill" />
+            <Play size={large ? 24 : 20} weight="fill" />
           )}
         </motion.button>
+      </div>
 
-        {/* Stop */}
+      {/* Right — stop */}
+      <div className="flex justify-end">
         <motion.button
           type="button"
           onClick={onStop}
           whileTap={{ scale: 0.93 }}
-          whileHover={{ scale: 1.04 }}
           transition={springTap}
           className={
             large
-              ? "flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/15 hover:text-white/80 focus:outline-none"
-              : "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/60 transition-colors hover:bg-white/15 hover:text-white/80 focus:outline-none"
+              ? "flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 focus:outline-none"
+              : "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 focus:outline-none"
           }
           aria-label="Stop"
         >
-          <Stop size={large ? 20 : 18} weight="fill" />
+          <Stop size={large ? 18 : 16} weight="fill" />
         </motion.button>
       </div>
     </div>
@@ -203,39 +172,37 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     enabled: isActive,
   });
 
-  return (
-    <>
-      {/* Collapsed trigger */}
-      <AnimatePresence>
-        {!isActive && (
-          <motion.button
-            type="button"
-            onClick={handlePlayPause}
-            className="cursor-pointer p-2 text-muted transition-colors hover:text-foreground focus:outline-none"
-            aria-label="Listen"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            whileTap={{ scale: 0.85 }}
-          >
-            <Play size={18} weight="fill" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Desktop: floating panel */}
-      {!isMobile && (
-        <AnimatePresence>
-          {isActive && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.92 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.92 }}
-              transition={{ type: "spring", stiffness: 350, damping: 28 }}
-              className="w-64 rounded-[24px] bg-black px-7 py-7 shadow-2xl"
+  // Desktop: single morphing element using layoutId
+  if (!isMobile) {
+    return (
+      <LayoutGroup>
+        <AnimatePresence mode="wait">
+          {!isActive ? (
+            /* Compact bar — idle state */
+            <motion.button
+              key="compact"
+              layoutId="player"
+              type="button"
+              onClick={handlePlayPause}
+              className="flex cursor-pointer items-center gap-2 rounded-full bg-player  px-3.5 py-2 shadow-lg focus:outline-none"
+              aria-label="Listen"
+              transition={spring}
+              whileTap={{ scale: 0.95 }}
             >
-              <PlayerPanel
+              <span className="flex items-center gap-2 text-white/50 transition-colors hover:text-white/70">
+                <Play size={14} weight="fill" />
+                <span className="text-[11px] font-medium tracking-wide uppercase">Listen</span>
+              </span>
+            </motion.button>
+          ) : (
+            /* Expanded panel — playing state */
+            <motion.div
+              key="expanded"
+              layoutId="player"
+              className="flex w-64 flex-col gap-4 rounded-2xl bg-player  px-5 py-5 shadow-2xl"
+              transition={spring}
+            >
+              <PlayerControls
                 speechStatus={speechStatus}
                 rate={rate}
                 onPlayPause={handlePlayPause}
@@ -245,35 +212,47 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
             </motion.div>
           )}
         </AnimatePresence>
-      )}
+      </LayoutGroup>
+    );
+  }
 
-      {/* Mobile: Vaul drawer */}
-      {isMobile && (
-        <Drawer.Root
-          open={isActive}
-          onOpenChange={handleDrawerOpenChange}
-          modal={false}
-          noBodyStyles
-        >
-          <Drawer.Portal>
-            <Drawer.Content
-              className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl bg-black px-6 pt-3 pb-10 shadow-2xl outline-none"
-              aria-describedby={undefined}
-            >
-              <Drawer.Title className="sr-only">Audio Player</Drawer.Title>
-              <Drawer.Handle className="mx-auto mb-5 h-1 w-8 rounded-full bg-white/20" />
-              <PlayerPanel
-                speechStatus={speechStatus}
-                rate={rate}
-                onPlayPause={handlePlayPause}
-                onStop={handleStop}
-                onRateCycle={handleRateCycle}
-                large
-              />
-            </Drawer.Content>
-          </Drawer.Portal>
-        </Drawer.Root>
-      )}
+  // Mobile: Vaul drawer
+  return (
+    <>
+      <motion.button
+        type="button"
+        onClick={handlePlayPause}
+        className="flex cursor-pointer items-center gap-2 rounded-full bg-player  px-3.5 py-2 text-white/50 shadow-lg transition-colors hover:text-white/70 focus:outline-none"
+        aria-label="Listen"
+        whileTap={{ scale: 0.95 }}
+        transition={springTap}
+      >
+        <Play size={14} weight="fill" />
+        <span className="text-[11px] font-medium tracking-wide uppercase">
+          {speechStatus === "started" ? "Playing" : speechStatus === "paused" ? "Paused" : "Listen"}
+        </span>
+      </motion.button>
+
+      <Drawer.Root open={isActive} onOpenChange={handleDrawerOpenChange} modal={false} noBodyStyles>
+        <Drawer.Portal>
+          <Drawer.Content
+            className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl bg-player  px-6 pt-3 pb-10 shadow-2xl outline-none"
+            aria-describedby={undefined}
+          >
+            <Drawer.Title className="sr-only">Audio Player</Drawer.Title>
+            <Drawer.Handle className="mx-auto mb-5 h-1 w-8 rounded-full bg-white/20" />
+
+            <PlayerControls
+              speechStatus={speechStatus}
+              rate={rate}
+              onPlayPause={handlePlayPause}
+              onStop={handleStop}
+              onRateCycle={handleRateCycle}
+              large
+            />
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </>
   );
 }
