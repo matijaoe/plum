@@ -104,28 +104,28 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
         onClick={() => setOpen(true)}
         whileTap={{ scale: 0.95 }}
         transition={springTap}
-        className="fixed bottom-6 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full bg-drawer px-4 py-2.5 shadow-lg focus:outline-none"
+        className="fixed bottom-6 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.06] bg-drawer px-5 py-3 shadow-lg focus:outline-none"
         style={{ left: "50vw" }}
         aria-label="Open controls"
       >
         {isPlaying ? (
           <>
             <Equalizer />
-            <span className="text-[11px] font-medium tracking-wide text-white uppercase">
+            <span className="text-[12px] font-medium tracking-wide text-white uppercase">
               Playing
             </span>
           </>
         ) : isActive ? (
           <>
-            <Play size={13} weight="fill" className="text-white" />
-            <span className="text-[11px] font-medium tracking-wide text-white uppercase">
+            <Play size={15} weight="fill" className="text-white" />
+            <span className="text-[12px] font-medium tracking-wide text-white uppercase">
               Paused
             </span>
           </>
         ) : (
           <>
-            <List size={15} weight="bold" className="text-white" />
-            <span className="text-[11px] font-medium tracking-wide text-white uppercase">Menu</span>
+            <List size={17} weight="bold" className="text-white" />
+            <span className="text-[12px] font-medium tracking-wide text-white uppercase">Menu</span>
           </>
         )}
       </motion.button>
@@ -151,9 +151,9 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
               <motion.button
                 type="button"
                 onClick={handleRateCycle}
-                whileTap={{ scale: 0.93 }}
+                whileTap={{ scale: 0.96 }}
                 transition={springTap}
-                className="flex h-11 w-14 cursor-pointer items-center justify-center rounded-full text-[13px] font-semibold tabular-nums text-white/40 transition-colors hover:text-white/70 focus:outline-none"
+                className="flex h-11 w-14 cursor-pointer items-center justify-center rounded-full text-[13px] font-semibold tabular-nums text-white/50 transition-colors hover:text-white/70 focus:outline-none"
                 aria-label={`Speed: ${rate}x`}
               >
                 {rate}x
@@ -163,7 +163,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
               <motion.button
                 type="button"
                 onClick={handlePlayPause}
-                whileTap={{ scale: 0.93 }}
+                whileTap={{ scale: 0.96 }}
                 transition={springTap}
                 className="flex h-13 w-13 cursor-pointer items-center justify-center rounded-full bg-white text-black focus:outline-none"
                 aria-label={isPlaying ? "Pause" : "Play"}
@@ -175,9 +175,9 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
               <motion.button
                 type="button"
                 onClick={stop}
-                whileTap={{ scale: 0.93 }}
+                whileTap={{ scale: 0.96 }}
                 transition={springTap}
-                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/35 transition-colors hover:text-white/60 focus:outline-none"
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white/45 transition-colors hover:text-white/60 focus:outline-none"
                 aria-label="Stop"
               >
                 <Stop size={18} weight="fill" />
