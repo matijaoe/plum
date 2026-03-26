@@ -104,7 +104,8 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
         onClick={() => setOpen(true)}
         whileTap={{ scale: 0.95 }}
         transition={springTap}
-        className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full bg-drawer px-4 py-2.5 shadow-lg focus:outline-none"
+        className="fixed bottom-6 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full bg-drawer px-4 py-2.5 shadow-lg focus:outline-none"
+        style={{ left: "50vw" }}
         aria-label="Open controls"
       >
         {isPlaying ? (

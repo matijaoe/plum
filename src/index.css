@@ -288,6 +288,8 @@ html {
   font-size: 0.8em;
   font-weight: normal;
   color: var(--color-foreground);
+  overflow-wrap: break-word;
+  word-break: break-all;
 }
 
 .prose :where(:not(pre) > code)::before,
