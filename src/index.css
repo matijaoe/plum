@@ -35,6 +35,7 @@ html {
   --color-scrollbar: rgba(0, 0, 0, 0.15);
   --color-link: #2563a0;
   --color-player: #000000;
+  --color-drawer: #000000;
 }
 
 :root.dark {
@@ -51,6 +52,7 @@ html {
   --color-scrollbar: rgba(255, 255, 255, 0.12);
   --color-link: #7ca3c4;
   --color-player: #000000;
+  --color-drawer: #1c1a18;
 }
 
 @theme inline {
@@ -63,6 +65,18 @@ html {
   --color-border: var(--color-border);
   --color-border-subtle: var(--color-border-subtle);
   --color-player: var(--color-player);
+  --color-drawer: var(--color-drawer);
+}
+
+/* ─── Equalizer animation ─── */
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 /* Prose palette */
