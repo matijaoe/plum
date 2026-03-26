@@ -102,16 +102,35 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
 
   return (
     <>
-      {/* Floating trigger — circle, bottom-left */}
+      {/* Floating pill — centered, Dynamic Island style */}
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
-        whileTap={{ scale: 0.9 }}
+        whileTap={{ scale: 0.95 }}
         transition={springTap}
-        className="fixed bottom-6 left-3 z-20 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-player shadow-lg focus:outline-none dark:bg-[#2a2826]"
+        className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full bg-drawer px-4 py-2.5 shadow-lg focus:outline-none"
         aria-label="Open controls"
       >
-        {isPlaying ? <Equalizer /> : <List size={18} weight="bold" className="text-white" />}
+        {isPlaying ? (
+          <>
+            <Equalizer />
+            <span className="text-[11px] font-medium tracking-wide text-white uppercase">
+              Playing
+            </span>
+          </>
+        ) : isActive ? (
+          <>
+            <Play size={13} weight="fill" className="text-white" />
+            <span className="text-[11px] font-medium tracking-wide text-white uppercase">
+              Paused
+            </span>
+          </>
+        ) : (
+          <>
+            <List size={15} weight="bold" className="text-white" />
+            <span className="text-[11px] font-medium tracking-wide text-white uppercase">Menu</span>
+          </>
+        )}
       </motion.button>
 
       {/* Drawer — dark surface */}
