@@ -46,7 +46,7 @@ function App() {
               type="button"
               onClick={clear}
               aria-label="New article"
-              className="cursor-pointer p-2 text-muted transition-colors hover:text-foreground md:pointer-events-auto"
+              className="cursor-pointer p-2 text-muted transition-[color,transform] duration-150 hover:text-foreground active:scale-90 md:pointer-events-auto"
             >
               <Plus size={18} weight="bold" />
             </button>

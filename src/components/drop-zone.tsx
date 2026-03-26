@@ -68,10 +68,10 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
           type="button"
           onClick={handlePasteClick}
           className={clsx(
-            "flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs transition-all duration-200",
+            "flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs transition-all duration-200 active:scale-95",
             isDragging
               ? "border-transparent opacity-0"
-              : "border-border text-secondary hover:border-secondary hover:text-foreground",
+              : "border-border text-foreground hover:border-secondary hover:bg-foreground/[0.03]",
           )}
         >
           <ClipboardText size={14} />

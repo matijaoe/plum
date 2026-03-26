@@ -24,7 +24,7 @@ export function ThemeToggle() {
             ? "Switch to system theme"
             : "Switch to dark mode"
       }
-      className="cursor-pointer p-2 text-muted transition-colors hover:text-foreground"
+      className="cursor-pointer p-2 text-muted transition-[color,transform] duration-150 hover:text-foreground active:scale-90"
     >
       {theme === "system" ? (
         <CircleHalf size={18} weight="bold" />
