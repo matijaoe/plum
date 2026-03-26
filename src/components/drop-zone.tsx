@@ -49,7 +49,7 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
           <p
             className={clsx(
               "font-serif text-lg transition-colors duration-200",
-              isDragging ? "text-foreground" : "text-secondary",
+              isDragging ? "text-foreground" : "text-foreground font-light",
             )}
           >
             {isDragging ? "Drop to read" : "Paste a link to read"}

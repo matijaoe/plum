@@ -395,7 +395,9 @@ html {
   line-height: 1.4;
   color: var(--color-muted);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    font-weight 0.15s ease;
 }
 
 .js-toc .toc-link:hover {

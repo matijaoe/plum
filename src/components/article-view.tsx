@@ -168,15 +168,15 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-widest text-muted"
+        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-wider text-muted"
       >
         <span>{source.host}</span>
         {source.path && (
-          <span className="inline-block max-w-0 truncate opacity-0 transition-all duration-300 ease-out group-hover:max-w-[20rem] group-hover:opacity-60">
+          <span className="inline-block max-w-0 truncate opacity-0 transition-[max-width,opacity] duration-300 ease-out group-hover:max-w-[20rem] group-hover:opacity-50">
             {source.path}
           </span>
         )}
-        <span className="ml-1.5 opacity-70">↗</span>
+        <span className="ml-1.5">↗</span>
       </a>
 
       <h1 className="font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl">
