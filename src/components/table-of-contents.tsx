@@ -34,7 +34,7 @@ export function TableOfContents({ article }: TableOfContentsProps) {
     <nav
       ref={tocRef}
       aria-label="Table of contents"
-      className="js-toc fixed left-5 top-1/2 hidden max-h-[calc(100vh-8rem)] w-64 max-w-[calc(50vw-21rem)] -translate-y-1/2 overflow-y-auto overscroll-contain xl:block"
+      className="js-toc fixed left-6 top-20 hidden max-h-[calc(100vh-8rem)] w-56 max-w-[calc(50vw-21rem)] overflow-y-auto overscroll-contain xl:block"
     />
   );
 }
