@@ -79,6 +79,13 @@ html {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  [style*="eq-bar"] {
+    animation: none !important;
+    transform: scaleY(0.5);
+  }
+}
+
 /* Prose palette */
 .prose {
   color: var(--color-prose);

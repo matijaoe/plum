@@ -74,7 +74,7 @@ function App() {
 
           {/* Desktop: floating player */}
           {!isMobile && (
-            <div className="fixed bottom-4 left-4 z-20">
+            <div className="fixed bottom-5 left-5 z-20">
               <TtsControls articleHtml={article.content} />
             </div>
           )}
