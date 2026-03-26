@@ -147,7 +147,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
             transition={spring}
             whileTap={{ scale: 0.95 }}
           >
-            <span className="flex items-center gap-2 text-white/50 transition-colors hover:text-white/70">
+            <span className="flex items-center gap-2 text-white">
               <Play size={14} weight="fill" />
               <span className="text-[11px] font-medium tracking-wide uppercase">Listen</span>
             </span>
