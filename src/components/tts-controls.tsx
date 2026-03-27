@@ -1,10 +1,10 @@
 import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
 import { AnimatePresence, motion, LayoutGroup } from "motion/react";
-
-const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
+import { Equalizer } from "./equalizer";
+import { RATES, extractText, springTap } from "../utils";
 
 /** Higher damping for smooth layout morphing (compact ↔ expanded). */
 const spring = {
@@ -12,37 +12,6 @@ const spring = {
   stiffness: 400,
   damping: 30,
 };
-
-/** Lower damping for snappy tap feedback on buttons. */
-const springTap = {
-  type: "spring" as const,
-  stiffness: 400,
-  damping: 25,
-};
-
-function extractText(html: string): string {
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || "";
-}
-
-function Equalizer() {
-  return (
-    <div className="flex items-end gap-[3px]" style={{ height: 12 }}>
-      {[0.8, 0.55, 0.7].map((duration, i) => (
-        <div
-          key={i}
-          className="w-[2px] rounded-full bg-white/60"
-          style={{
-            height: "100%",
-            transformOrigin: "bottom",
-            animation: `eq-bar ${duration}s ease-in-out ${i * 0.15}s infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 function PlayerControls({
   speechStatus,
@@ -151,10 +120,11 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
   const speechActive = speechStatus === "started" || speechStatus === "paused";
   const isActive = speechActive || pending;
 
-  // Clear pending once the API catches up
-  if (pending && speechActive) {
-    setPending(false);
-  }
+  useEffect(() => {
+    if (pending && speechActive) {
+      setPending(false);
+    }
+  }, [pending, speechActive]);
 
   function handlePlayPause() {
     if (speechStatus === "started") {

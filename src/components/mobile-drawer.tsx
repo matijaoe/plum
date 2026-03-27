@@ -5,39 +5,8 @@ import { useSpeech } from "react-text-to-speech";
 import { motion } from "motion/react";
 import { Drawer } from "vaul";
 import { useTheme } from "next-themes";
-
-const RATES = [0.75, 1, 1.25, 1.5, 2] as const;
-
-const springTap = {
-  type: "spring" as const,
-  stiffness: 400,
-  damping: 25,
-};
-
-function extractText(html: string): string {
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || "";
-}
-
-/** Animated equalizer bars — plays a looping CSS animation. */
-function Equalizer() {
-  return (
-    <div className="flex items-end gap-[3px]" style={{ height: 14 }}>
-      {[0.8, 0.55, 0.7].map((duration, i) => (
-        <div
-          key={i}
-          className="w-[2.5px] rounded-full bg-white"
-          style={{
-            height: "100%",
-            transformOrigin: "bottom",
-            animation: `eq-bar ${duration}s ease-in-out ${i * 0.15}s infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+import { Equalizer } from "./equalizer";
+import { RATES, extractText, springTap } from "../utils";
 
 interface MobileDrawerProps {
   articleHtml: string;
@@ -110,7 +79,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
       >
         {isPlaying ? (
           <>
-            <Equalizer />
+            <Equalizer height={14} barWidth="2.5px" color="bg-white" />
             <span className="text-[12px] font-medium tracking-wide text-white uppercase">
               Playing
             </span>
