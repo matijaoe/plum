@@ -168,7 +168,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-wider text-muted"
+        className="stagger-in source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-wider text-muted"
       >
         <span>{source.host}</span>
         {source.path && (
@@ -179,11 +179,14 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <span className="ml-1.5">↗</span>
       </a>
 
-      <h1 className="font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl">
+      <h1
+        className="stagger-in font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl"
+        style={{ animationDelay: "120ms" }}
+      >
         {article.title}
       </h1>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="stagger-in mt-4 text-sm text-muted" style={{ animationDelay: "240ms" }}>
         {[
           article.publishedDate && formatDate(article.publishedDate),
           article.byline,
@@ -197,14 +200,16 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <img
           src={article.ogImage}
           alt=""
-          className="mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          style={{ animationDelay: "360ms" }}
           onClick={() => openLightbox(article.ogImage!)}
         />
       )}
 
       <div
         ref={proseRef}
-        className="prose prose-lg mt-8 max-w-none font-serif"
+        className="stagger-in prose prose-lg mt-8 max-w-none font-serif"
+        style={{ animationDelay: article.ogImage ? "480ms" : "360ms" }}
         dangerouslySetInnerHTML={{ __html: processedContent }}
         onClick={handleProseClick}
       />

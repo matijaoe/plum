@@ -69,7 +69,7 @@ function App() {
               isDragging && "opacity-50 transition-opacity duration-300",
             )}
           >
-            <ArticleView article={article} sourceUrl={sourceUrl} />
+            <ArticleView key={sourceUrl} article={article} sourceUrl={sourceUrl} />
           </main>
 
           {/* Desktop: floating player */}
