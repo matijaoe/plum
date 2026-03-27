@@ -142,7 +142,6 @@ html {
   font-weight: inherit;
   text-decoration: none;
   overflow-wrap: break-word;
-  word-break: break-all;
 }
 
 .prose :where(a:visited) {
