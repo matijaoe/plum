@@ -139,6 +139,7 @@ interface TtsControlsProps {
 
 export function TtsControls({ articleHtml }: TtsControlsProps) {
   const [rate, setRate] = useState(1);
+  const [pending, setPending] = useState(false);
   const text = useMemo(() => extractText(articleHtml), [articleHtml]);
 
   const { speechStatus, start, pause, stop } = useSpeech({
@@ -147,14 +148,26 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     stableText: true,
   });
 
-  const isActive = speechStatus === "started" || speechStatus === "paused";
+  const speechActive = speechStatus === "started" || speechStatus === "paused";
+  const isActive = speechActive || pending;
+
+  // Clear pending once the API catches up
+  if (pending && speechActive) {
+    setPending(false);
+  }
 
   function handlePlayPause() {
     if (speechStatus === "started") {
       pause();
     } else {
+      setPending(true);
       start();
     }
+  }
+
+  function handleStop() {
+    setPending(false);
+    stop();
   }
 
   function handleRateCycle() {
@@ -163,14 +176,14 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     setRate(RATES[nextIndex]);
   }
 
-  useHotkey("L", () => (isActive ? stop() : start()));
+  useHotkey("L", () => (isActive ? handleStop() : start()));
 
   useHotkey("Space", handlePlayPause, {
     enabled: isActive,
     preventDefault: true,
   });
 
-  useHotkey("Escape", () => stop(), {
+  useHotkey("Escape", handleStop, {
     enabled: isActive,
   });
 
@@ -207,7 +220,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
               speechStatus={speechStatus}
               rate={rate}
               onPlayPause={handlePlayPause}
-              onStop={stop}
+              onStop={handleStop}
               onRateCycle={handleRateCycle}
             />
           </motion.div>
