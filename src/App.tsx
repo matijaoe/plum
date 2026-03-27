@@ -38,7 +38,8 @@ function App() {
           className={clsx(
             "flex items-center justify-between p-3",
             "md:pointer-events-none md:fixed md:inset-x-0 md:top-0 md:z-20",
-            isDragging && "opacity-0 transition-opacity duration-200",
+            "transition-opacity duration-200",
+            isDragging && "opacity-0",
           )}
         >
           {sourceUrl ? (
@@ -46,7 +47,7 @@ function App() {
               type="button"
               onClick={clear}
               aria-label="New article"
-              className="cursor-pointer p-2 text-muted transition-colors hover:text-foreground md:pointer-events-auto"
+              className="cursor-pointer p-2 text-muted transition-[color,transform] duration-150 hover:text-foreground active:scale-90 md:pointer-events-auto"
             >
               <Plus size={18} weight="bold" />
             </button>
@@ -69,12 +70,12 @@ function App() {
               isDragging && "opacity-50 transition-opacity duration-300",
             )}
           >
-            <ArticleView article={article} sourceUrl={sourceUrl} />
+            <ArticleView key={sourceUrl} article={article} sourceUrl={sourceUrl} />
           </main>
 
           {/* Desktop: floating player */}
           {!isMobile && (
-            <div className="fixed bottom-4 left-4 z-20">
+            <div className="fixed bottom-5 left-5 z-20">
               <TtsControls articleHtml={article.content} />
             </div>
           )}

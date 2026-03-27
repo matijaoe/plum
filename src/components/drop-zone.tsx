@@ -31,7 +31,7 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
       {/* Full-page tint + border on drag */}
       <div
         className={clsx(
-          "pointer-events-none fixed inset-0 transition-all duration-300 ease-out",
+          "pointer-events-none fixed inset-0 transition-opacity duration-300 ease-out",
           isDragging ? "opacity-100" : "opacity-0",
         )}
       >
@@ -49,7 +49,7 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
           <p
             className={clsx(
               "font-serif text-lg transition-colors duration-200",
-              isDragging ? "text-foreground" : "text-secondary",
+              isDragging ? "text-foreground" : "text-foreground font-light",
             )}
           >
             {isDragging ? "Drop to read" : "Paste a link to read"}
@@ -68,10 +68,10 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
           type="button"
           onClick={handlePasteClick}
           className={clsx(
-            "flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs transition-all duration-200",
+            "flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 font-mono text-xs transition-[border-color,color,background-color,transform] duration-200 active:scale-95",
             isDragging
               ? "border-transparent opacity-0"
-              : "border-border text-secondary hover:border-secondary hover:text-foreground",
+              : "border-border text-foreground hover:border-secondary hover:bg-foreground/[0.03]",
           )}
         >
           <ClipboardText size={14} />

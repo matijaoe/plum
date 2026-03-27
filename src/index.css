@@ -79,6 +79,13 @@ html {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  [style*="eq-bar"] {
+    animation: none !important;
+    transform: scaleY(0.5);
+  }
+}
+
 /* Prose palette */
 .prose {
   color: var(--color-prose);
@@ -135,7 +142,6 @@ html {
   font-weight: inherit;
   text-decoration: none;
   overflow-wrap: break-word;
-  word-break: break-all;
 }
 
 .prose :where(a:visited) {
@@ -194,20 +200,27 @@ html {
 }
 
 .prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"])::before {
-  content: "#";
+  content: "";
   position: absolute;
   right: 100%;
-  padding-right: 0.375em;
-  font-family: var(--font-mono);
-  font-size: 1em;
-  color: var(--color-muted);
+  top: 0.3em;
+  width: 3px;
+  height: 0.7em;
+  margin-right: 0.625em;
+  border-radius: 9999px;
+  background-color: var(--color-muted);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: scaleY(0.5);
+  transform-origin: top;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   pointer-events: none;
 }
 
 .prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"]):hover::before {
-  opacity: 1;
+  opacity: 0.5;
+  transform: scaleY(1);
 }
 
 /* Code block language label */
@@ -327,6 +340,12 @@ html {
 }
 
 /* ─── Lightbox (YARL) ─── */
+/* Disable YARL's scroll lock (conflicts with scrollbar-gutter: stable).
+   We lock scroll on html instead — the stable gutter keeps layout steady. */
+html:has(.yarl__root) {
+  overflow: hidden;
+}
+
 .yarl-plum {
   --yarl__color_backdrop: rgba(253, 251, 247, 0.98);
   --yarl__fade_animation_duration: 0.2s;
@@ -340,16 +359,59 @@ html {
 }
 
 .yarl-plum .yarl__slide {
-  padding: 16px 64px;
+  padding: 16px 12px;
+}
+
+@media (min-width: 640px) {
+  .yarl-plum .yarl__slide {
+    padding: 16px 48px;
+  }
 }
 
 .yarl-plum .yarl__button {
   filter: none;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.yarl-plum .yarl__button:active {
+  transform: scale(0.9);
+}
+
+.yarl-plum .yarl__toolbar {
+  padding: 8px;
+}
+
+@media (min-width: 640px) {
+  .yarl-plum .yarl__toolbar {
+    padding: 12px;
+  }
 }
 
 .yarl-plum .yarl__navigation_prev,
 .yarl-plum .yarl__navigation_next {
-  padding: 24px 16px;
+  padding: 16px 8px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.05), transparent);
+  border-radius: 0.5rem;
+}
+
+.yarl-plum .yarl__navigation_next {
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.05), transparent);
+}
+
+@media (min-width: 640px) {
+  .yarl-plum .yarl__navigation_prev,
+  .yarl-plum .yarl__navigation_next {
+    padding: 24px 16px;
+    background: none;
+    border-radius: 0;
+  }
+}
+
+.yarl-plum .yarl__navigation_prev:active,
+.yarl-plum .yarl__navigation_next:active {
+  transform: translateY(-50%) scale(0.92);
 }
 
 .yarl-plum .yarl__navigation_prev:disabled,
@@ -359,6 +421,30 @@ html {
 
 .prose :where(img) {
   cursor: zoom-in;
+}
+
+/* ─── Article entrance stagger ─── */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-in {
+  animation: stagger-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ─── Table of Contents (tocbot) ─── */
@@ -388,7 +474,9 @@ html {
   line-height: 1.4;
   color: var(--color-muted);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    font-weight 0.15s ease;
 }
 
 .js-toc .toc-link:hover {

@@ -1,11 +1,12 @@
 import { ArrowLeft, ArrowRight, DownloadSimple, X } from "@phosphor-icons/react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useRef } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import "yet-another-react-lightbox/styles.css";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
 import type { Article } from "../reader";
-import { formatDate } from "../utils";
+import { downloadUrl, formatDate } from "../utils";
 
 function parseSourceParts(url: string): { host: string; path: string } {
   try {
@@ -61,6 +62,21 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
   const { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick } =
     useArticleLightbox(article);
+
+  useHotkey("S", () => window.open(sourceUrl, "_blank", "noopener,noreferrer"), {
+    enabled: !open,
+  });
+
+  useHotkey(
+    "D",
+    () => {
+      const src = slides[index]?.src;
+      if (src) {
+        void downloadUrl(src);
+      }
+    },
+    { enabled: open },
+  );
 
   // Pre-process article HTML: rewrite links, add heading IDs and anchors.
   // Running this as a pure transform on the string (not a DOM side-effect)
@@ -168,22 +184,25 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-widest text-muted"
+        className="stagger-in source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-wider text-muted"
       >
         <span>{source.host}</span>
         {source.path && (
-          <span className="inline-block max-w-0 truncate opacity-0 transition-all duration-300 ease-out group-hover:max-w-[20rem] group-hover:opacity-60">
+          <span className="inline-block max-w-0 truncate opacity-0 transition-[max-width,opacity] duration-300 ease-out group-hover:max-w-[20rem] group-hover:opacity-50">
             {source.path}
           </span>
         )}
-        <span className="ml-1.5 opacity-70">↗</span>
+        <span className="ml-1.5">↗</span>
       </a>
 
-      <h1 className="font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl">
+      <h1
+        className="stagger-in font-serif text-4xl font-normal leading-[1.12] text-balance text-foreground sm:text-[2.75rem] lg:text-5xl"
+        style={{ animationDelay: "120ms" }}
+      >
         {article.title}
       </h1>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="stagger-in mt-4 text-sm text-muted" style={{ animationDelay: "240ms" }}>
         {[
           article.publishedDate && formatDate(article.publishedDate),
           article.byline,
@@ -197,14 +216,16 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <img
           src={article.ogImage}
           alt=""
-          className="mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          style={{ animationDelay: "360ms" }}
           onClick={() => openLightbox(article.ogImage!)}
         />
       )}
 
       <div
         ref={proseRef}
-        className="prose prose-lg mt-8 max-w-none font-serif"
+        className="stagger-in prose prose-lg mt-8 max-w-none font-serif"
+        style={{ animationDelay: article.ogImage ? "480ms" : "360ms" }}
         dangerouslySetInnerHTML={{ __html: processedContent }}
         onClick={handleProseClick}
       />
@@ -217,6 +238,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
           on={{ view: ({ index: i }) => setIndex(i) }}
           slides={slides}
           plugins={[Download]}
+          noScroll={{ disabled: true }}
           animation={{ fade: 250, swipe: 350 }}
           carousel={{ finite: true }}
           controller={{ closeOnBackdropClick: true }}
