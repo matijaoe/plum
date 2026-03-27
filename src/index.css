@@ -415,14 +415,6 @@ html:has(.yarl__root) {
 
 .prose :where(img) {
   cursor: zoom-in;
-  transition:
-    filter 0.2s ease,
-    transform 0.2s ease;
-}
-
-.prose :where(img):hover {
-  filter: brightness(1.02);
-  transform: scale(1.005);
 }
 
 /* ─── Article entrance stagger ─── */

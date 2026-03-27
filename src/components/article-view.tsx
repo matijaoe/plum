@@ -1,11 +1,12 @@
 import { ArrowLeft, ArrowRight, DownloadSimple, X } from "@phosphor-icons/react";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useRef } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import "yet-another-react-lightbox/styles.css";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
 import type { Article } from "../reader";
-import { formatDate } from "../utils";
+import { downloadUrl, formatDate } from "../utils";
 
 function parseSourceParts(url: string): { host: string; path: string } {
   try {
@@ -61,6 +62,21 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
   const { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick } =
     useArticleLightbox(article);
+
+  useHotkey("S", () => window.open(sourceUrl, "_blank", "noopener,noreferrer"), {
+    enabled: !open,
+  });
+
+  useHotkey(
+    "D",
+    () => {
+      const src = slides[index]?.src;
+      if (src) {
+        downloadUrl(src);
+      }
+    },
+    { enabled: open },
+  );
 
   // Pre-process article HTML: rewrite links, add heading IDs and anchors.
   // Running this as a pure transform on the string (not a DOM side-effect)
