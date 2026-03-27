@@ -201,20 +201,27 @@ html {
 }
 
 .prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"])::before {
-  content: "#";
+  content: "";
   position: absolute;
   right: 100%;
-  padding-right: 0.375em;
-  font-family: var(--font-mono);
-  font-size: 1em;
-  color: var(--color-muted);
+  top: 0.3em;
+  width: 3px;
+  height: 0.7em;
+  margin-right: 0.625em;
+  border-radius: 9999px;
+  background-color: var(--color-muted);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transform: scaleY(0.5);
+  transform-origin: top;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   pointer-events: none;
 }
 
 .prose :where(h2[id], h3[id], h4[id]):has(> a[href^="#"]):hover::before {
-  opacity: 1;
+  opacity: 0.5;
+  transform: scaleY(1);
 }
 
 /* Code block language label */
