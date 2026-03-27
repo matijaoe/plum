@@ -72,7 +72,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     () => {
       const src = slides[index]?.src;
       if (src) {
-        downloadUrl(src);
+        void downloadUrl(src);
       }
     },
     { enabled: open },
