@@ -38,7 +38,8 @@ function App() {
           className={clsx(
             "flex items-center justify-between p-3",
             "md:pointer-events-none md:fixed md:inset-x-0 md:top-0 md:z-20",
-            isDragging && "opacity-0 transition-opacity duration-200",
+            "transition-opacity duration-200",
+            isDragging && "opacity-0",
           )}
         >
           {sourceUrl ? (
