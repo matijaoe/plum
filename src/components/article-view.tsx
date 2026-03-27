@@ -222,6 +222,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
           on={{ view: ({ index: i }) => setIndex(i) }}
           slides={slides}
           plugins={[Download]}
+          noScroll={{ disabled: true }}
           animation={{ fade: 250, swipe: 350 }}
           carousel={{ finite: true }}
           controller={{ closeOnBackdropClick: true }}

@@ -334,6 +334,12 @@ html {
 }
 
 /* ─── Lightbox (YARL) ─── */
+/* Disable YARL's scroll lock (conflicts with scrollbar-gutter: stable).
+   We lock scroll on html instead — the stable gutter keeps layout steady. */
+html:has(.yarl__root) {
+  overflow: hidden;
+}
+
 .yarl-plum {
   --yarl__color_backdrop: rgba(253, 251, 247, 0.98);
   --yarl__fade_animation_duration: 0.2s;
