@@ -27,7 +27,7 @@ export function DropZone({ isDragging, onUrl }: DropZoneProps) {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center">
+    <div className="relative flex min-h-dvh items-center justify-center">
       {/* Full-page tint + border on drag */}
       <div
         className={clsx(

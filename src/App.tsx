@@ -32,7 +32,7 @@ function App() {
   const hasArticle = !!article && !!sourceUrl;
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="min-h-dvh bg-background font-sans text-foreground">
       {/* Top controls — hidden on mobile when article is loaded */}
       {!(isMobile && hasArticle) && (
         <div

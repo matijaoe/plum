@@ -77,7 +77,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
         }}
         transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         whileTap={{ scale: 0.96, transition: springTap }}
-        className="fixed bottom-6 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.06] bg-drawer px-5 py-3 shadow-lg focus:outline-none"
+        className="fixed bottom-[calc(1.5rem+var(--sai-bottom))] z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.06] bg-drawer px-5 py-3 shadow-lg focus:outline-none"
         style={{ left: "50vw", pointerEvents: open ? "none" : "auto" }}
         aria-label="Open controls"
       >
@@ -161,7 +161,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
             <div className="mx-4 border-t border-white/10" />
 
             {/* Actions */}
-            <div className="space-y-0.5 px-4 pt-2 pb-10">
+            <div className="space-y-0.5 px-4 pt-2 pb-[calc(2.5rem+var(--sai-bottom))]">
               <button
                 type="button"
                 onClick={handleReadNew}
