@@ -232,7 +232,7 @@ html {
   position: relative;
 }
 
-.prose :where(pre[data-language]):hover::before {
+.prose :where(pre[data-language]):not(:hover)::before {
   opacity: 1;
 }
 
@@ -251,6 +251,45 @@ html {
   opacity: 0;
   transition: opacity 0.15s ease;
   background: linear-gradient(to bottom left, var(--color-elevated) 20%, transparent 70%);
+}
+
+/* Code block copy button */
+.code-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border-subtle);
+  background-color: var(--color-elevated);
+  color: var(--color-muted);
+  cursor: pointer;
+  opacity: 0;
+  user-select: none;
+  transition:
+    opacity 0.15s ease-out,
+    color 0.15s ease-out,
+    scale 0.15s ease-out;
+  pointer-events: none;
+}
+
+.prose pre:hover .code-copy-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.code-copy-btn:hover {
+  color: var(--color-foreground);
+}
+
+.code-copy-btn:active {
+  scale: 0.96;
 }
 
 /* Shiki dual-theme support */
@@ -289,6 +328,7 @@ html {
 
 /* Code blocks */
 .prose pre {
+  position: relative;
   background-color: var(--color-elevated) !important;
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;

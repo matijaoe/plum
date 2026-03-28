@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, DownloadSimple, X } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useRef } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import "yet-another-react-lightbox/styles.css";
@@ -192,10 +193,33 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     }
 
     const controller = new AbortController();
-    void import("../highlight").then(({ highlightCodeBlocks }) =>
-      highlightCodeBlocks(el, controller.signal),
-    );
-    return () => controller.abort();
+    const roots: Root[] = [];
+
+    void import("../highlight").then(async ({ highlightCodeBlocks }) => {
+      await highlightCodeBlocks(el, controller.signal);
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      const { CodeCopyButton } = await import("./code-copy-button");
+      for (const pre of el.querySelectorAll<HTMLPreElement>("pre")) {
+        if (pre.querySelector(".code-copy-btn")) {
+          continue;
+        }
+        const container = document.createElement("span");
+        pre.appendChild(container);
+        const root = createRoot(container);
+        roots.push(root);
+        root.render(<CodeCopyButton pre={pre} />);
+      }
+    });
+
+    return () => {
+      controller.abort();
+      for (const root of roots) {
+        root.unmount();
+      }
+    };
   }, [article.content, sourceUrl]);
 
   return (
