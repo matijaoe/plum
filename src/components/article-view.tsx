@@ -5,6 +5,7 @@ import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import "yet-another-react-lightbox/styles.css";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
+import { navigateToFragment } from "../hooks/use-fragment-navigation";
 import type { Article } from "../reader";
 import { downloadUrl, formatDate } from "../utils";
 
@@ -60,8 +61,25 @@ interface ArticleViewProps {
 export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
-  const { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick } =
-    useArticleLightbox(article);
+  const { slides, open, index, setIndex, setOpen, openLightbox } = useArticleLightbox(article);
+
+  function onProseClick(e: React.MouseEvent<HTMLDivElement>) {
+    const target = e.target as HTMLElement;
+
+    const img = target.closest("img");
+    if (img?.src) {
+      e.preventDefault();
+      openLightbox(img.src);
+      return;
+    }
+
+    const anchor = target.closest<HTMLAnchorElement>("a[href^='#']");
+    if (anchor) {
+      e.preventDefault();
+      const id = decodeURIComponent(anchor.getAttribute("href")!.slice(1));
+      navigateToFragment(id, { replace: anchor.hasAttribute("data-heading-link") });
+    }
+  }
 
   useHotkey("S", () => window.open(sourceUrl, "_blank", "noopener,noreferrer"), {
     enabled: !open,
@@ -101,6 +119,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       }
 
       anchor.setAttribute("href", `#${heading.id}`);
+      anchor.setAttribute("data-heading-link", "");
       anchor.removeAttribute("target");
       anchor.removeAttribute("rel");
       headingAnchors.add(anchor);
@@ -128,6 +147,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
       if (!heading.querySelector(":scope > a[href^='#']")) {
         const anchor = doc.createElement("a");
         anchor.href = `#${heading.id}`;
+        anchor.setAttribute("data-heading-link", "");
         while (heading.firstChild) {
           anchor.appendChild(heading.firstChild);
         }
@@ -227,7 +247,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         className="stagger-in prose prose-lg mt-8 max-w-none font-serif"
         style={{ animationDelay: article.ogImage ? "480ms" : "360ms" }}
         dangerouslySetInnerHTML={{ __html: processedContent }}
-        onClick={handleProseClick}
+        onClick={onProseClick}
       />
 
       {slides.length > 0 && (
