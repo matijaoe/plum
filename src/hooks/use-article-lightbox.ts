@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Article } from "../reader";
 
 interface Slide {
@@ -27,28 +27,13 @@ export function useArticleLightbox(article: Article) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
 
-  const openLightbox = useCallback(
-    (src: string) => {
-      const i = slides.findIndex((s) => s.src === src);
-      if (i >= 0) {
-        setIndex(i);
-        setOpen(true);
-      }
-    },
-    [slides],
-  );
+  function openLightbox(src: string) {
+    const i = slides.findIndex((s) => s.src === src);
+    if (i >= 0) {
+      setIndex(i);
+      setOpen(true);
+    }
+  }
 
-  const handleProseClick = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement;
-      const img = target.closest("img");
-      if (img?.src) {
-        event.preventDefault();
-        openLightbox(img.src);
-      }
-    },
-    [openLightbox],
-  );
-
-  return { slides, open, index, setIndex, setOpen, openLightbox, handleProseClick };
+  return { slides, open, index, setIndex, setOpen, openLightbox };
 }

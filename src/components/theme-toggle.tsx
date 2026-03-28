@@ -1,6 +1,9 @@
 import { Circle, CircleHalf } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
+import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
+
+const iconTransition = { type: "spring" as const, duration: 0.3, bounce: 0 };
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -13,6 +16,8 @@ export function ThemeToggle() {
 
   useHotkey("Mod+J", cycleTheme, { preventDefault: true });
 
+  const iconKey = theme === "system" ? "system" : dark ? "dark" : "light";
+
   return (
     <button
       type="button"
@@ -24,15 +29,26 @@ export function ThemeToggle() {
             ? "Switch to system theme"
             : "Switch to dark mode"
       }
-      className="cursor-pointer p-2 text-muted transition-[color,transform] duration-150 hover:text-foreground active:scale-90"
+      className="relative flex size-10 cursor-pointer items-center justify-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-[0.96]"
     >
-      {theme === "system" ? (
-        <CircleHalf size={18} weight="bold" />
-      ) : dark ? (
-        <Circle size={18} weight="fill" />
-      ) : (
-        <Circle size={18} weight="bold" />
-      )}
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.span
+          key={iconKey}
+          initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+          transition={iconTransition}
+          className="flex items-center justify-center"
+        >
+          {theme === "system" ? (
+            <CircleHalf size={18} weight="bold" />
+          ) : dark ? (
+            <Circle size={18} weight="fill" />
+          ) : (
+            <Circle size={18} weight="bold" />
+          )}
+        </motion.span>
+      </AnimatePresence>
     </button>
   );
 }

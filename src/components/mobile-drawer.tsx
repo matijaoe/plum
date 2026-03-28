@@ -71,10 +71,14 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
       <motion.button
         type="button"
         onClick={() => setOpen(true)}
-        whileTap={{ scale: 0.95 }}
-        transition={springTap}
-        className="fixed bottom-6 z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.06] bg-drawer px-5 py-3 shadow-lg focus:outline-none"
-        style={{ left: "50vw" }}
+        animate={{
+          opacity: open ? 0 : 1,
+          scale: open ? 0.9 : 1,
+        }}
+        transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+        whileTap={{ scale: 0.96, transition: springTap }}
+        className="fixed bottom-[calc(1.5rem+var(--sai-bottom))] z-20 flex -translate-x-1/2 cursor-pointer items-center gap-2.5 rounded-full border border-white/[0.06] bg-drawer px-5 py-3 shadow-lg focus:outline-none"
+        style={{ left: "50vw", pointerEvents: open ? "none" : "auto" }}
         aria-label="Open controls"
       >
         {isPlaying ? (
@@ -157,11 +161,11 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
             <div className="mx-4 border-t border-white/10" />
 
             {/* Actions */}
-            <div className="space-y-0.5 px-4 pt-2 pb-10">
+            <div className="space-y-0.5 px-4 pt-2 pb-[calc(2.5rem+var(--sai-bottom))]">
               <button
                 type="button"
                 onClick={handleReadNew}
-                className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-colors active:bg-white/5"
+                className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.98] active:bg-white/5"
               >
                 <Plus size={18} weight="bold" />
                 <span className="text-[14px]">Read new article</span>
@@ -170,7 +174,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
               <button
                 type="button"
                 onClick={cycleTheme}
-                className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-colors active:bg-white/5"
+                className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.98] active:bg-white/5"
               >
                 <ThemeIcon size={18} weight={themeIconWeight} />
                 <span className="text-[14px]">Appearance</span>

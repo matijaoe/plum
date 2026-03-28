@@ -159,7 +159,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
 
   return (
     <LayoutGroup>
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false} mode="wait">
         {!isActive ? (
           /* Compact bar — idle state */
           <motion.button
@@ -171,7 +171,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
             aria-label="Listen (L)"
             title="Press L"
             transition={spring}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.96 }}
           >
             <span className="flex items-center gap-2 text-white">
               <Play size={14} weight="fill" />

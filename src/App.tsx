@@ -7,6 +7,7 @@ import { TableOfContents } from "./components/table-of-contents";
 import { DragOverlay } from "./components/drag-overlay";
 import { DropZone } from "./components/drop-zone";
 import { MobileDrawer } from "./components/mobile-drawer";
+import { ScrollToTop } from "./components/scroll-to-top";
 import { ThemeToggle } from "./components/theme-toggle";
 import { TtsControls } from "./components/tts-controls";
 import { useArticle } from "./hooks/use-article";
@@ -31,7 +32,7 @@ function App() {
   const hasArticle = !!article && !!sourceUrl;
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground">
+    <div className="min-h-dvh bg-background font-sans text-foreground">
       {/* Top controls — hidden on mobile when article is loaded */}
       {!(isMobile && hasArticle) && (
         <div
@@ -47,7 +48,7 @@ function App() {
               type="button"
               onClick={clear}
               aria-label="New article"
-              className="cursor-pointer p-2 text-muted transition-[color,transform] duration-150 hover:text-foreground active:scale-90 md:pointer-events-auto"
+              className="flex size-10 cursor-pointer items-center justify-center text-muted transition-[color,scale] duration-150 ease-out hover:text-foreground active:scale-[0.96] md:pointer-events-auto"
             >
               <Plus size={18} weight="bold" />
             </button>
@@ -63,6 +64,7 @@ function App() {
       {hasArticle ? (
         <>
           {isDragging && <DragOverlay />}
+          <ScrollToTop />
           <TableOfContents article={article} />
           <main
             className={clsx(
