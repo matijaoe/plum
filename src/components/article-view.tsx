@@ -184,7 +184,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="stagger-in source-link group mb-3 inline-flex text-xs font-semibold uppercase tracking-wider text-muted"
+        className="stagger-in source-link group mb-0.5 inline-flex py-2.5 text-xs font-semibold uppercase tracking-wider text-muted"
       >
         <span>{source.host}</span>
         {source.path && (
@@ -216,7 +216,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         <img
           src={article.ogImage}
           alt=""
-          className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg border border-border-subtle"
+          className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg outline outline-1 -outline-offset-1 outline-border-subtle"
           style={{ animationDelay: "360ms" }}
           onClick={() => openLightbox(article.ogImage!)}
         />
