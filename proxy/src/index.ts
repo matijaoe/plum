@@ -19,7 +19,7 @@ export default {
 
     try {
       const resp = await fetch(target, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; ReaderProxy/1.0)" },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; PlumProxy/1.0)" },
       });
       const html = await resp.text();
       return new Response(html, {

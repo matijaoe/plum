@@ -13,7 +13,7 @@ import {
   type MobileDrawerAction,
 } from "@plum/core";
 
-const WEB_APP_URL = (import.meta.env.WXT_WEB_APP_URL as string) ?? "https://plum-reader.vercel.app";
+const WEB_APP_URL = (import.meta.env.WXT_WEB_APP_URL as string) ?? "https://plum.matijao.com";
 
 function buildWebAppUrl(sourceUrl: string): string {
   const url = new URL(WEB_APP_URL);
