@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
-import { usePlum } from "../plum-context";
+import { useReaderContext } from "../reader-context";
 import type { Article } from "../reader";
 import { downloadUrl, formatDate } from "../utils";
 
@@ -158,7 +158,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     navigateToFragment,
     codeToHtml: ctxCodeToHtml,
     onOverlayChange,
-  } = usePlum();
+  } = useReaderContext();
   const { slides, open, index, setIndex, openLightbox } = lightbox;
 
   const setOpen = useCallback(

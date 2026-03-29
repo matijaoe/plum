@@ -3,11 +3,11 @@ import { useHotkey } from "@tanstack/react-hotkeys";
 import { ThemeProvider } from "next-themes";
 import { useCallback, useMemo } from "react";
 import {
-  PlumProvider,
+  ReaderProvider,
   ReaderView,
   SHIKI_FALLBACK_LANGUAGE,
   SHIKI_THEME_VALUES,
-  usePlum,
+  useReaderContext,
   type Article,
   type CodeToHtmlFn,
   type MobileDrawerAction,
@@ -101,32 +101,6 @@ function ReaderOverlayInner({ article, sourceUrl, onExit }: ReaderOverlayProps) 
     [],
   );
 
-  const { overlayOpen } = usePlum();
-
-  useHotkey(
-    "Escape",
-    () => {
-      // Check TTS state at key-press time (not render time)
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        return;
-      }
-      onExit();
-    },
-    { enabled: !overlayOpen },
-  );
-
-  useHotkey(
-    "O",
-    () => {
-      window.open(
-        `${WEB_APP_URL}?url=${encodeURIComponent(sourceUrl)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
-    },
-    { enabled: !overlayOpen },
-  );
-
   const drawerActions = useMemo<MobileDrawerAction[]>(
     () => [
       {
@@ -150,7 +124,8 @@ function ReaderOverlayInner({ article, sourceUrl, onExit }: ReaderOverlayProps) 
   );
 
   return (
-    <PlumProvider navigateToFragment={navigateToFragment} codeToHtml={codeToHtml}>
+    <ReaderProvider navigateToFragment={navigateToFragment} codeToHtml={codeToHtml}>
+      <ExtensionHotkeys sourceUrl={sourceUrl} onExit={onExit} />
       <div className="min-h-dvh bg-background font-sans text-foreground">
         <ReaderView
           article={article}
@@ -168,6 +143,36 @@ function ReaderOverlayInner({ article, sourceUrl, onExit }: ReaderOverlayProps) 
           drawerActions={drawerActions}
         />
       </div>
-    </PlumProvider>
+    </ReaderProvider>
   );
+}
+
+/** Hotkeys that are inside ReaderProvider so they can read overlayOpen from context. */
+function ExtensionHotkeys({ sourceUrl, onExit }: { sourceUrl: string; onExit: () => void }) {
+  const { overlayOpen } = useReaderContext();
+
+  useHotkey(
+    "Escape",
+    () => {
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        return;
+      }
+      onExit();
+    },
+    { enabled: !overlayOpen },
+  );
+
+  useHotkey(
+    "O",
+    () => {
+      window.open(
+        `${WEB_APP_URL}?url=${encodeURIComponent(sourceUrl)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+    },
+    { enabled: !overlayOpen },
+  );
+
+  return null;
 }

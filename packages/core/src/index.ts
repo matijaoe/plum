@@ -3,8 +3,8 @@ export { parseArticle, extractArticleFromDom, normalizeUrl, validateUrl } from "
 export type { Article } from "./reader";
 
 // Context
-export { PlumProvider, usePlum } from "./plum-context";
-export type { CodeToHtmlFn } from "./plum-context";
+export { ReaderProvider, useReaderContext } from "./reader-context";
+export type { CodeToHtmlFn } from "./reader-context";
 export { SHIKI_FALLBACK_LANGUAGE, SHIKI_THEMES, SHIKI_THEME_VALUES } from "./shiki";
 
 // Utilities

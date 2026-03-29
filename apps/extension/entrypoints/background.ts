@@ -1,8 +1,8 @@
-const PLUM_READER_HOST_ID = "plum-reader-host";
-const PLUM_READER_FRAME_ID = "plum-reader-frame";
-const PLUM_PREVIOUS_HTML_OVERFLOW = "plumPreviousHtmlOverflow";
-const PLUM_PREVIOUS_BODY_OVERFLOW = "plumPreviousBodyOverflow";
-const PLUM_READER_CLEANUP_KEY = "__plumReaderCleanup";
+const READER_HOST_ID = "reader-host";
+const READER_FRAME_ID = "reader-frame";
+const PREVIOUS_HTML_OVERFLOW = "previousHtmlOverflow";
+const PREVIOUS_BODY_OVERFLOW = "previousBodyOverflow";
+const READER_CLEANUP_KEY = "__readerCleanup";
 
 export default defineBackground(() => {
   browser.action.onClicked.addListener(async (tab) => {
@@ -36,12 +36,7 @@ export default defineBackground(() => {
         }
         return false;
       },
-      args: [
-        PLUM_READER_HOST_ID,
-        PLUM_PREVIOUS_HTML_OVERFLOW,
-        PLUM_PREVIOUS_BODY_OVERFLOW,
-        PLUM_READER_CLEANUP_KEY,
-      ],
+      args: [READER_HOST_ID, PREVIOUS_HTML_OVERFLOW, PREVIOUS_BODY_OVERFLOW, READER_CLEANUP_KEY],
     });
 
     if (alreadyOpen) {
@@ -107,7 +102,7 @@ export default defineBackground(() => {
             return;
           }
 
-          if (event.data?.type === "plum-exit") {
+          if (event.data?.type === "reader-exit") {
             cleanup();
           }
         };
@@ -121,11 +116,11 @@ export default defineBackground(() => {
       },
       args: [
         readerUrl,
-        PLUM_READER_HOST_ID,
-        PLUM_READER_FRAME_ID,
-        PLUM_PREVIOUS_HTML_OVERFLOW,
-        PLUM_PREVIOUS_BODY_OVERFLOW,
-        PLUM_READER_CLEANUP_KEY,
+        READER_HOST_ID,
+        READER_FRAME_ID,
+        PREVIOUS_HTML_OVERFLOW,
+        PREVIOUS_BODY_OVERFLOW,
+        READER_CLEANUP_KEY,
       ],
     });
 

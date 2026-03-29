@@ -7,7 +7,7 @@ import { Drawer } from "vaul";
 import { useTheme } from "next-themes";
 import { Equalizer } from "./equalizer";
 import { RATES, extractText, springTap } from "../utils";
-import { usePlum } from "../plum-context";
+import { useReaderContext } from "../reader-context";
 
 export interface MobileDrawerAction {
   label: string;
@@ -21,7 +21,7 @@ interface MobileDrawerProps {
 }
 
 export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
-  const { portalContainer, onOverlayChange } = usePlum();
+  const { portalContainer, onOverlayChange } = useReaderContext();
   const [open, setOpen] = useState(false);
 
   const handleOpenChange = useCallback(

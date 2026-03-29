@@ -100,7 +100,7 @@ function ReaderApp() {
     <ReaderOverlay
       article={state.article}
       sourceUrl={state.sourceUrl}
-      onExit={() => window.parent.postMessage({ type: "plum-exit" }, "*")}
+      onExit={() => window.parent.postMessage({ type: "reader-exit" }, "*")}
     />
   );
 }
@@ -110,8 +110,7 @@ if (!container) {
   document.body.textContent = "Missing reader root.";
 } else {
   const root =
-    (window as typeof window & { __plumReaderRoot?: Root }).__plumReaderRoot ??
-    createRoot(container);
-  (window as typeof window & { __plumReaderRoot?: Root }).__plumReaderRoot = root;
+    (window as typeof window & { __readerRoot?: Root }).__readerRoot ?? createRoot(container);
+  (window as typeof window & { __readerRoot?: Root }).__readerRoot = root;
   root.render(<ReaderApp />);
 }

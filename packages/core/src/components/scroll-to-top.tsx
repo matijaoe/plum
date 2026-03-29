@@ -1,11 +1,11 @@
 import { ArrowUp } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { usePlum } from "../plum-context";
+import { useReaderContext } from "../reader-context";
 
 const SCROLL_THRESHOLD = 400;
 
 export function ScrollToTop() {
-  const { scrollContainer } = usePlum();
+  const { scrollContainer } = useReaderContext();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

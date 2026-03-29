@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Article } from "../reader";
-import { usePlum } from "../plum-context";
+import { useReaderContext } from "../reader-context";
 
 interface Heading {
   id: string;
@@ -13,7 +13,7 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({ article }: TableOfContentsProps) {
-  const { scrollContainer, contentRoot, navigateToFragment } = usePlum();
+  const { scrollContainer, contentRoot, navigateToFragment } = useReaderContext();
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>("");
 

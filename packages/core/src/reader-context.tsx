@@ -14,7 +14,7 @@ type CodeToHtmlFn = (
   options: { lang: string; themes: Record<string, string> },
 ) => Promise<string>;
 
-interface PlumContextValue {
+interface ReaderContextValue {
   /** Portal target for YARL lightbox and Vaul drawer. null = document.body (default). */
   portalContainer: Element | null;
   /** Scroll container for ScrollToTop and TOC scroll spy. null = window (default). */
@@ -31,7 +31,7 @@ interface PlumContextValue {
   onOverlayChange: (open: boolean) => void;
 }
 
-const PlumContext = createContext<PlumContextValue>({
+const ReaderContext = createContext<ReaderContextValue>({
   portalContainer: null,
   scrollContainer: null,
   contentRoot: document,
@@ -41,17 +41,17 @@ const PlumContext = createContext<PlumContextValue>({
   onOverlayChange: () => {},
 });
 
-export function usePlum() {
-  return useContext(PlumContext);
+export function useReaderContext() {
+  return useContext(ReaderContext);
 }
 
-interface PlumProviderProps extends Partial<
-  Omit<PlumContextValue, "overlayOpen" | "onOverlayChange">
+interface ReaderProviderProps extends Partial<
+  Omit<ReaderContextValue, "overlayOpen" | "onOverlayChange">
 > {
   children: ReactNode;
 }
 
-export function PlumProvider({ children, ...overrides }: PlumProviderProps) {
+export function ReaderProvider({ children, ...overrides }: ReaderProviderProps) {
   const countRef = useRef(0);
   const [overlayOpen, setOverlayOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export function PlumProvider({ children, ...overrides }: PlumProviderProps) {
     setOverlayOpen(countRef.current > 0);
   }, []);
 
-  const value = useMemo<PlumContextValue>(
+  const value = useMemo<ReaderContextValue>(
     () => ({
       portalContainer: overrides.portalContainer ?? null,
       scrollContainer: overrides.scrollContainer ?? null,
@@ -81,7 +81,7 @@ export function PlumProvider({ children, ...overrides }: PlumProviderProps) {
     ],
   );
 
-  return <PlumContext.Provider value={value}>{children}</PlumContext.Provider>;
+  return <ReaderContext.Provider value={value}>{children}</ReaderContext.Provider>;
 }
 
 export type { CodeToHtmlFn };

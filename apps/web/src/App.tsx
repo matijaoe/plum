@@ -2,7 +2,13 @@ import { Agentation } from "agentation";
 import clsx from "clsx";
 import { Plus } from "@phosphor-icons/react";
 import { useCallback, useMemo } from "react";
-import { ReaderView, ThemeToggle, useDoubleEscape, useIsMobile, usePlum } from "@plum/core";
+import {
+  ReaderView,
+  ThemeToggle,
+  useDoubleEscape,
+  useIsMobile,
+  useReaderContext,
+} from "@plum/core";
 import type { MobileDrawerAction } from "@plum/core";
 import { DragOverlay } from "./components/drag-overlay";
 import { DropZone } from "./components/drop-zone";
@@ -15,7 +21,7 @@ function App() {
   useGlobalPaste(submitUrl);
   const { isDragging } = useGlobalDrop(submitUrl);
   const isMobile = useIsMobile();
-  const { overlayOpen } = usePlum();
+  const { overlayOpen } = useReaderContext();
   useDoubleEscape(
     useCallback(() => {
       if (article) {
