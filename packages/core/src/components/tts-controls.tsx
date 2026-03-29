@@ -2,7 +2,7 @@ import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
-import { AnimatePresence, motion, LayoutGroup } from "motion/react";
+import { AnimatePresence, domAnimation, LayoutGroup, LazyMotion, m } from "motion/react";
 import { Equalizer } from "./equalizer";
 import { useReaderContext } from "../reader-context";
 import { RATES, extractText, springTap } from "../utils";
@@ -28,7 +28,7 @@ function PlayerControls({
   onRateCycle: () => void;
 }) {
   return (
-    <motion.div
+    <m.div
       className="flex w-full flex-col gap-3"
       initial={{ opacity: 0, filter: "blur(4px)" }}
       animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -54,7 +54,7 @@ function PlayerControls({
       <div className="grid grid-cols-3 items-center">
         {/* Left — speed */}
         <div className="flex justify-start">
-          <motion.button
+          <m.button
             type="button"
             onClick={onRateCycle}
             whileTap={{ scale: 0.96 }}
@@ -63,12 +63,12 @@ function PlayerControls({
             aria-label={`Speed: ${rate}x`}
           >
             {rate}x
-          </motion.button>
+          </m.button>
         </div>
 
         {/* Center — play/pause */}
         <div className="flex justify-center">
-          <motion.button
+          <m.button
             type="button"
             onClick={onPlayPause}
             whileTap={{ scale: 0.96 }}
@@ -82,12 +82,12 @@ function PlayerControls({
             ) : (
               <Play size={20} weight="fill" />
             )}
-          </motion.button>
+          </m.button>
         </div>
 
         {/* Right — stop */}
         <div className="flex justify-end">
-          <motion.button
+          <m.button
             type="button"
             onClick={onStop}
             whileTap={{ scale: 0.96 }}
@@ -96,10 +96,10 @@ function PlayerControls({
             aria-label="Stop"
           >
             <Stop size={16} weight="fill" />
-          </motion.button>
+          </m.button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -162,44 +162,46 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
   });
 
   return (
-    <LayoutGroup>
-      <AnimatePresence initial={false} mode="wait">
-        {!isActive ? (
-          /* Compact bar — idle state */
-          <motion.button
-            key="compact"
-            layoutId="player"
-            type="button"
-            onClick={handlePlayPause}
-            className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.06] bg-player px-3.5 py-2 shadow-lg focus:outline-none"
-            aria-label="Listen (L)"
-            title="Press L"
-            transition={spring}
-            whileTap={{ scale: 0.96 }}
-          >
-            <span className="flex items-center gap-2 text-white">
-              <Play size={14} weight="fill" />
-              <span className="text-[11px] font-medium tracking-wide uppercase">Listen</span>
-            </span>
-          </motion.button>
-        ) : (
-          /* Expanded panel — playing state */
-          <motion.div
-            key="expanded"
-            layoutId="player"
-            className="flex w-56 flex-col rounded-2xl border border-white/[0.06] bg-player px-4 py-4 shadow-2xl"
-            transition={spring}
-          >
-            <PlayerControls
-              speechStatus={speechStatus}
-              rate={rate}
-              onPlayPause={handlePlayPause}
-              onStop={handleStop}
-              onRateCycle={handleRateCycle}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </LayoutGroup>
+    <LazyMotion features={domAnimation}>
+      <LayoutGroup>
+        <AnimatePresence initial={false} mode="wait">
+          {!isActive ? (
+            /* Compact bar — idle state */
+            <m.button
+              key="compact"
+              layoutId="player"
+              type="button"
+              onClick={handlePlayPause}
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.06] bg-player px-3.5 py-2 shadow-lg focus:outline-none"
+              aria-label="Listen (L)"
+              title="Press L"
+              transition={spring}
+              whileTap={{ scale: 0.96 }}
+            >
+              <span className="flex items-center gap-2 text-white">
+                <Play size={14} weight="fill" />
+                <span className="text-[11px] font-medium tracking-wide uppercase">Listen</span>
+              </span>
+            </m.button>
+          ) : (
+            /* Expanded panel — playing state */
+            <m.div
+              key="expanded"
+              layoutId="player"
+              className="flex w-56 flex-col rounded-2xl border border-white/[0.06] bg-player px-4 py-4 shadow-2xl"
+              transition={spring}
+            >
+              <PlayerControls
+                speechStatus={speechStatus}
+                rate={rate}
+                onPlayPause={handlePlayPause}
+                onStop={handleStop}
+                onRateCycle={handleRateCycle}
+              />
+            </m.div>
+          )}
+        </AnimatePresence>
+      </LayoutGroup>
+    </LazyMotion>
   );
 }

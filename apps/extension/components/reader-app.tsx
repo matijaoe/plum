@@ -35,23 +35,21 @@ function ReaderApp() {
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function load(): Promise<ReaderState | null> {
       const readerId = new URLSearchParams(window.location.search).get("id");
       if (!readerId) {
-        setState({ status: "error", message: "Missing reader session." });
-        return;
+        return { status: "error", message: "Missing reader session." };
       }
 
       const key = `reader-${readerId}`;
       const stored = await browser.storage.session.get(key);
       if (cancelled) {
-        return;
+        return null;
       }
 
       const data = stored[key] as ReaderSession | undefined;
       if (!data) {
-        setState({ status: "error", message: "This reader session is no longer available." });
-        return;
+        return { status: "error", message: "This reader session is no longer available." };
       }
 
       void browser.storage.session.remove(key);
@@ -68,20 +66,30 @@ function ReaderApp() {
       }
 
       if (cancelled) {
-        return;
+        return null;
       }
 
       if (!article) {
-        setState({ status: "error", message: "Could not parse article from this page." });
+        return { status: "error", message: "Could not parse article from this page." };
+      }
+
+      return { status: "ready", article, sourceUrl: data.sourceUrl };
+    }
+
+    void load().then((nextState) => {
+      if (!nextState || cancelled) {
         return;
       }
 
-      startTransition(() => {
-        setState({ status: "ready", article, sourceUrl: data.sourceUrl });
-      });
-    }
+      if (nextState.status === "ready") {
+        startTransition(() => {
+          setState(nextState);
+        });
+        return;
+      }
 
-    void load();
+      setState(nextState);
+    });
 
     return () => {
       cancelled = true;
@@ -100,7 +108,7 @@ function ReaderApp() {
     <ReaderOverlay
       article={state.article}
       sourceUrl={state.sourceUrl}
-      onExit={() => window.parent.postMessage({ type: "reader-exit" }, "*")}
+      onExit={() => browser.runtime.sendMessage({ type: "reader-exit" })}
     />
   );
 }

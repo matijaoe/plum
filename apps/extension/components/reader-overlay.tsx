@@ -15,6 +15,12 @@ import {
 
 const WEB_APP_URL = (import.meta.env.WXT_WEB_APP_URL as string) ?? "https://plum-reader.vercel.app";
 
+function buildWebAppUrl(sourceUrl: string): string {
+  const url = new URL(WEB_APP_URL);
+  url.searchParams.set("url", sourceUrl);
+  return url.toString();
+}
+
 interface ReaderOverlayProps {
   article: Article;
   sourceUrl: string;
@@ -88,7 +94,8 @@ function ReaderOverlayInner({ article, sourceUrl, onExit }: ReaderOverlayProps) 
     (id: string, { replace = false }: { replace?: boolean } = {}) => {
       const el = document.getElementById(id);
       if (el) {
-        const url = `${window.location.pathname}${window.location.search}#${encodeURIComponent(id)}`;
+        const url = new URL(window.location.href);
+        url.hash = id;
         if (replace) {
           history.replaceState(null, "", url);
         } else {
@@ -112,11 +119,7 @@ function ReaderOverlayInner({ article, sourceUrl, onExit }: ReaderOverlayProps) 
         label: "Open in web app",
         icon: <ArrowSquareOut size={18} weight="bold" />,
         onClick: () => {
-          window.open(
-            `${WEB_APP_URL}?url=${encodeURIComponent(sourceUrl)}`,
-            "_blank",
-            "noopener,noreferrer",
-          );
+          window.open(buildWebAppUrl(sourceUrl), "_blank", "noopener,noreferrer");
         },
       },
     ],
@@ -165,11 +168,7 @@ function ExtensionHotkeys({ sourceUrl, onExit }: { sourceUrl: string; onExit: ()
   useHotkey(
     "O",
     () => {
-      window.open(
-        `${WEB_APP_URL}?url=${encodeURIComponent(sourceUrl)}`,
-        "_blank",
-        "noopener,noreferrer",
-      );
+      window.open(buildWebAppUrl(sourceUrl), "_blank", "noopener,noreferrer");
     },
     { enabled: !overlayOpen },
   );

@@ -1,5 +1,5 @@
 import { Check, Copy } from "@phosphor-icons/react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, domAnimation, LazyMotion, m } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copyText } from "../utils";
 
@@ -46,19 +46,21 @@ export function CodeCopyButton({ pre }: { pre: HTMLPreElement }) {
   }, [pre]);
 
   return (
-    <button type="button" onClick={handleClick} aria-label="Copy code" className="code-copy-btn">
-      <AnimatePresence initial={false} mode="popLayout">
-        <motion.span
-          key={copied ? "check" : "copy"}
-          initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-          transition={iconTransition}
-          className="flex items-center justify-center"
-        >
-          {copied ? <Check size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
-        </motion.span>
-      </AnimatePresence>
-    </button>
+    <LazyMotion features={domAnimation}>
+      <button type="button" onClick={handleClick} aria-label="Copy code" className="code-copy-btn">
+        <AnimatePresence initial={false} mode="popLayout">
+          <m.span
+            key={copied ? "check" : "copy"}
+            initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
+            transition={iconTransition}
+            className="flex items-center justify-center"
+          >
+            {copied ? <Check size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
+          </m.span>
+        </AnimatePresence>
+      </button>
+    </LazyMotion>
   );
 }

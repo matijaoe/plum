@@ -1,10 +1,21 @@
 const READER_HOST_ID = "reader-host";
-const READER_FRAME_ID = "reader-frame";
-const PREVIOUS_HTML_OVERFLOW = "previousHtmlOverflow";
-const PREVIOUS_BODY_OVERFLOW = "previousBodyOverflow";
-const READER_CLEANUP_KEY = "__readerCleanup";
 
 export default defineBackground(() => {
+  // Handle exit request from the reader iframe
+  browser.runtime.onMessage.addListener((msg, sender) => {
+    if (msg.type === "reader-exit" && sender.tab?.id) {
+      void browser.scripting.executeScript({
+        target: { tabId: sender.tab.id },
+        func: (hostId: string) => {
+          document.getElementById(hostId)?.remove();
+          document.documentElement.style.overflow = "";
+          document.body.style.overflow = "";
+        },
+        args: [READER_HOST_ID],
+      });
+    }
+  });
+
   browser.action.onClicked.addListener(async (tab) => {
     if (!tab.id || !tab.url) {
       return;
@@ -13,30 +24,17 @@ export default defineBackground(() => {
     // Toggle: if reader is already open, close it
     const [{ result: alreadyOpen }] = await browser.scripting.executeScript({
       target: { tabId: tab.id },
-      func: (
-        hostId: string,
-        previousHtmlOverflowKey: string,
-        previousBodyOverflowKey: string,
-        cleanupKey: string,
-      ) => {
-        const existingCleanup = (window as unknown as Record<string, (() => void) | undefined>)[
-          cleanupKey
-        ];
-        if (existingCleanup) {
-          existingCleanup();
-          return true;
-        }
-
+      func: (hostId: string) => {
         const existing = document.getElementById(hostId);
         if (existing) {
-          document.documentElement.style.overflow = existing.dataset[previousHtmlOverflowKey] ?? "";
-          document.body.style.overflow = existing.dataset[previousBodyOverflowKey] ?? "";
           existing.remove();
+          document.documentElement.style.overflow = "";
+          document.body.style.overflow = "";
           return true;
         }
         return false;
       },
-      args: [READER_HOST_ID, PREVIOUS_HTML_OVERFLOW, PREVIOUS_BODY_OVERFLOW, READER_CLEANUP_KEY],
+      args: [READER_HOST_ID],
     });
 
     if (alreadyOpen) {
@@ -60,68 +58,28 @@ export default defineBackground(() => {
     });
 
     // Inject a fullscreen iframe overlay on the page
-    const readerUrl = browser.runtime.getURL(`/reader.html?id=${readerId}`);
+    const readerUrl = new URL(browser.runtime.getURL("/reader.html"));
+    readerUrl.searchParams.set("id", readerId);
     const [{ result: opened }] = await browser.scripting.executeScript({
       target: { tabId: tab.id },
-      func: (
-        url: string,
-        hostId: string,
-        frameId: string,
-        previousHtmlOverflowKey: string,
-        previousBodyOverflowKey: string,
-        cleanupKey: string,
-      ) => {
-        const previousHtmlOverflow = document.documentElement.style.overflow;
-        const previousBodyOverflow = document.body.style.overflow;
-        const expectedOrigin = new URL(url).origin;
-
+      func: (url: string, hostId: string) => {
         const host = document.createElement("div");
         host.id = hostId;
-        host.dataset[previousHtmlOverflowKey] = previousHtmlOverflow;
-        host.dataset[previousBodyOverflowKey] = previousBodyOverflow;
         host.style.cssText = "position:fixed;inset:0;z-index:2147483647;";
 
         const iframe = document.createElement("iframe");
-        iframe.id = frameId;
         iframe.src = url;
         iframe.allow = "clipboard-write";
         iframe.style.cssText =
           "display:block;width:100%;height:100%;border:none;background:transparent;";
         host.appendChild(iframe);
 
-        const cleanup = () => {
-          window.removeEventListener("message", onMessage);
-          host.remove();
-          document.documentElement.style.overflow = previousHtmlOverflow;
-          document.body.style.overflow = previousBodyOverflow;
-          delete (window as unknown as Record<string, unknown>)[cleanupKey];
-        };
-
-        const onMessage = (event: MessageEvent) => {
-          if (event.source !== iframe.contentWindow || event.origin !== expectedOrigin) {
-            return;
-          }
-
-          if (event.data?.type === "reader-exit") {
-            cleanup();
-          }
-        };
-
-        window.addEventListener("message", onMessage);
-        (window as unknown as Record<string, unknown>)[cleanupKey] = cleanup;
         document.documentElement.style.overflow = "hidden";
         document.body.style.overflow = "hidden";
         document.documentElement.appendChild(host);
         return true;
       },
-      args: [
-        readerUrl,
-        READER_HOST_ID,
-        READER_FRAME_ID,
-        PREVIOUS_HTML_OVERFLOW,
-        PREVIOUS_BODY_OVERFLOW,
-        READER_CLEANUP_KEY,
-      ],
+      args: [readerUrl.toString(), READER_HOST_ID],
     });
 
     if (!opened) {

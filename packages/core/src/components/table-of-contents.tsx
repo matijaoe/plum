@@ -155,7 +155,6 @@ export function TableOfContents({ article }: TableOfContentsProps) {
         headings={headings}
         activeId={activeId}
         baseLevel={minLevel}
-        onActivate={setActiveId}
         navigateToFragment={navigateToFragment}
       />
     </nav>
@@ -166,13 +165,11 @@ function TocList({
   headings,
   activeId,
   baseLevel,
-  onActivate,
   navigateToFragment,
 }: {
   headings: Heading[];
   activeId: string;
   baseLevel: number;
-  onActivate: (id: string) => void;
   navigateToFragment: (id: string, opts?: { replace?: boolean }) => void;
 }) {
   const items: { heading: Heading; children: Heading[] }[] = [];
@@ -192,7 +189,6 @@ function TocList({
           <TocLink
             heading={heading}
             isActive={activeId === heading.id}
-            onActivate={onActivate}
             onClick={navigateToFragment}
           />
           {children.length > 0 && (
@@ -202,7 +198,6 @@ function TocList({
                   <TocLink
                     heading={child}
                     isActive={activeId === child.id}
-                    onActivate={onActivate}
                     onClick={navigateToFragment}
                   />
                 </li>
@@ -218,25 +213,22 @@ function TocList({
 function TocLink({
   heading,
   isActive,
-  onActivate,
   onClick,
 }: {
   heading: Heading;
   isActive: boolean;
-  onActivate: (id: string) => void;
   onClick: (id: string, opts?: { replace?: boolean }) => void;
 }) {
   return (
-    <a
-      href={`#${heading.id}`}
+    <button
+      type="button"
       className={`toc-link${isActive ? " is-active-link" : ""}`}
-      onClick={(e) => {
-        e.preventDefault();
-        onActivate(heading.id);
+      aria-current={isActive ? "location" : undefined}
+      onClick={() => {
         onClick(heading.id, { replace: true });
       }}
     >
       {heading.text}
-    </a>
+    </button>
   );
 }

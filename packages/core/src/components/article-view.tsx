@@ -1,6 +1,8 @@
 import { useHotkey } from "@tanstack/react-hotkeys";
 import {
+  forwardRef,
   lazy,
+  memo,
   startTransition,
   Suspense,
   useCallback,
@@ -150,7 +152,14 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
   const [processedContent, setProcessedContent] = useState(article.content);
-  const lightbox = useArticleLightbox(article);
+  const {
+    slides,
+    open,
+    index,
+    setIndex,
+    setOpen: rawSetOpen,
+    openLightbox,
+  } = useArticleLightbox(article);
   const {
     portalContainer,
     scrollContainer,
@@ -159,41 +168,63 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     codeToHtml: ctxCodeToHtml,
     onOverlayChange,
   } = useReaderContext();
-  const { slides, open, index, setIndex, openLightbox } = lightbox;
 
-  const setOpen = useCallback(
-    (value: boolean) => {
-      lightbox.setOpen(value);
-      onOverlayChange(value);
-    },
-    [lightbox, onOverlayChange],
-  );
+  // Stable refs to avoid recreating callbacks on every render
+  const rawSetOpenRef = useRef(rawSetOpen);
+  rawSetOpenRef.current = rawSetOpen;
+  const openLightboxRef = useRef(openLightbox);
+  openLightboxRef.current = openLightbox;
+  const onOverlayChangeRef = useRef(onOverlayChange);
+  onOverlayChangeRef.current = onOverlayChange;
 
-  const openLightboxWithOverlay = useCallback(
-    (src: string) => {
-      openLightbox(src);
-      onOverlayChange(true);
-    },
-    [openLightbox, onOverlayChange],
-  );
+  const setOpen = useCallback((value: boolean) => {
+    rawSetOpenRef.current(value);
+    onOverlayChangeRef.current(value);
+  }, []);
 
-  function onProseClick(e: React.MouseEvent<HTMLDivElement>) {
-    const target = e.target as HTMLElement;
+  const openLightboxWithOverlay = useCallback((src: string) => {
+    openLightboxRef.current(src);
+    onOverlayChangeRef.current(true);
+  }, []);
 
-    const img = target.closest("img");
-    if (img?.src) {
-      e.preventDefault();
-      openLightboxWithOverlay(img.src);
+  const navigateRef = useRef(navigateToFragment);
+  navigateRef.current = navigateToFragment;
+  const ogImage = article.ogImage;
+
+  useEffect(() => {
+    const el = proseRef.current;
+    if (!el) {
       return;
     }
 
-    const anchor = target.closest<HTMLAnchorElement>("a[href^='#']");
-    if (anchor) {
-      e.preventDefault();
+    function handleProseClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const img = target.closest("img");
+      if (img instanceof HTMLImageElement && img.src) {
+        event.preventDefault();
+        openLightboxWithOverlay(img.src);
+        return;
+      }
+
+      const anchor = target.closest("a[href^='#']");
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+
+      event.preventDefault();
       const id = decodeURIComponent(anchor.getAttribute("href")!.slice(1));
-      navigateToFragment(id, { replace: anchor.hasAttribute("data-heading-link") });
+      navigateRef.current(id, { replace: anchor.hasAttribute("data-heading-link") });
     }
-  }
+
+    el.addEventListener("click", handleProseClick);
+    return () => {
+      el.removeEventListener("click", handleProseClick);
+    };
+  }, [openLightboxWithOverlay]);
 
   useHotkey("S", () => window.open(sourceUrl, "_blank", "noopener,noreferrer"), {
     enabled: !open,
@@ -355,22 +386,26 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
           .join(" \u00B7 ")}
       </p>
 
-      {article.ogImage && (
-        <img
-          src={article.ogImage}
-          alt=""
-          className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg outline outline-1 -outline-offset-1 outline-border-subtle"
+      {ogImage && (
+        <button
+          type="button"
+          aria-label="Open article image"
+          className="stagger-in mt-8 block w-full cursor-zoom-in rounded-lg focus:outline-none"
           style={{ animationDelay: "360ms" }}
-          onClick={() => openLightboxWithOverlay(article.ogImage!)}
-        />
+          onClick={() => openLightboxWithOverlay(ogImage)}
+        >
+          <img
+            src={ogImage}
+            alt=""
+            className="w-full rounded-lg outline outline-1 -outline-offset-1 outline-border-subtle"
+          />
+        </button>
       )}
 
-      <div
+      <ProseContent
         ref={proseRef}
-        className="stagger-in prose prose-lg mt-8 max-w-none font-serif"
-        style={{ animationDelay: article.ogImage ? "480ms" : "360ms" }}
-        dangerouslySetInnerHTML={{ __html: processedContent }}
-        onClick={onProseClick}
+        html={processedContent}
+        animationDelay={ogImage ? "480ms" : "360ms"}
       />
 
       {open && slides.length > 0 && (
@@ -388,3 +423,24 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     </article>
   );
 }
+
+/**
+ * Memoized prose container. Prevents React from re-setting innerHTML when
+ * parent re-renders due to context changes, which would destroy Shiki's
+ * in-place DOM modifications for syntax highlighting.
+ */
+const ProseContent = memo(
+  forwardRef<HTMLDivElement, { html: string; animationDelay: string }>(function ProseContent(
+    { html, animationDelay },
+    ref,
+  ) {
+    return (
+      <div
+        ref={ref}
+        className="stagger-in prose prose-lg mt-8 max-w-none font-serif"
+        style={{ animationDelay }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }),
+);
