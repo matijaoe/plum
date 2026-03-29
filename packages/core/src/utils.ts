@@ -17,7 +17,7 @@ export function getPlatformModifier(): string {
 }
 
 export async function downloadUrl(url: string) {
-  const name = url.split("/").pop() || "download";
+  const name = new URL(url).pathname.split("/").pop() || "download";
   try {
     const res = await fetch(url);
     const blob = await res.blob();
@@ -30,6 +30,42 @@ export async function downloadUrl(url: string) {
   } catch {
     // Cross-origin fetch blocked — fall back to new tab
     window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+export async function copyText(text: string, html?: string): Promise<boolean> {
+  try {
+    if (html && navigator.clipboard?.write) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" }),
+        }),
+      ]);
+      return true;
+    }
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall back to a local selection-based copy path below.
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.cssText =
+    "position:fixed;top:0;left:0;opacity:0;pointer-events:none;contain:strict;";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    textarea.remove();
   }
 }
 

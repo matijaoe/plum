@@ -1,3 +1,5 @@
+import { SHIKI_FALLBACK_LANGUAGE, SHIKI_THEMES } from "./shiki";
+
 function getCodeBlocks(container: HTMLElement): NodeListOf<Element> {
   return container.querySelectorAll("pre > code");
 }
@@ -36,13 +38,17 @@ function waitForCodeBlocks(
 export async function highlightCodeBlocks(
   container: HTMLElement,
   signal: AbortSignal,
+  customCodeToHtml?: (
+    code: string,
+    options: { lang: string; themes: Record<string, string> },
+  ) => Promise<string>,
 ): Promise<void> {
   const blocks = await waitForCodeBlocks(container, signal);
   if (!blocks || signal.aborted) {
     return;
   }
 
-  const { codeToHtml } = await import("shiki");
+  const codeToHtml = customCodeToHtml ?? (await import("shiki")).codeToHtml;
 
   for (const code of blocks) {
     if (signal.aborted) {
@@ -61,8 +67,8 @@ export async function highlightCodeBlocks(
     const text = code.textContent ?? "";
     try {
       const html = await codeToHtml(text, {
-        lang: lang?.toLowerCase() ?? "text",
-        themes: { light: "vitesse-light", dark: "vitesse-dark" },
+        lang: lang?.toLowerCase() ?? SHIKI_FALLBACK_LANGUAGE,
+        themes: SHIKI_THEMES,
       });
       const wrapper = document.createElement("div");
       wrapper.innerHTML = html;

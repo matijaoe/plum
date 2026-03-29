@@ -10,7 +10,8 @@ export function navigateToFragment(id: string, { replace = false }: NavigateOpti
 
   el.scrollIntoView({ behavior: "smooth" });
 
-  const url = `${window.location.pathname}${window.location.search}#${id}`;
+  const url = new URL(window.location.href);
+  url.hash = id;
   if (replace) {
     history.replaceState(null, "", url);
   } else {

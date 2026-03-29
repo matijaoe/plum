@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Plum</title>
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem("theme");
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          const isDark =
+            storedTheme === "dark" ||
+            ((storedTheme === null || storedTheme === "system") && prefersDark);
+          document.documentElement.classList.toggle("dark", isDark);
+          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+        } catch {
+          // Fall back to the browser's default color-scheme resolution.
+        }
+      })();
+    </script>
+    <style>
+      html {
+        color-scheme: light;
+      }
+
+      html.dark {
+        color-scheme: dark;
+      }
+
+      body {
+        min-height: 100dvh;
+        margin: 0;
+        background: var(--color-background, Canvas);
+        color: var(--color-foreground, CanvasText);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #root {
+        min-height: 100dvh;
+      }
+    </style>
+    <link rel="stylesheet" href="../styles/reader.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Geist+Mono:wght@100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-background antialiased">
+    <div id="root"></div>
+    <script type="module" src="../components/reader-app.tsx"></script>
+  </body>
+</html>

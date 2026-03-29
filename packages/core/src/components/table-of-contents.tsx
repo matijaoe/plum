@@ -1,104 +1,234 @@
-import tocbot from "tocbot";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import type { Article } from "../reader";
-import { navigateToFragment } from "../hooks/use-fragment-navigation";
+import { useReaderContext } from "../reader-context";
+
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
 
 interface TableOfContentsProps {
   article: Article;
 }
 
-/**
- * When the page is scrolled to the bottom, the last heading can never reach
- * the top of the viewport so tocbot won't activate it. After scrolling stops,
- * we check and override to the last link if needed.
- */
-function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const toc = tocRef.current;
-    if (!toc) {
-      return;
-    }
-
-    const BOTTOM_THRESHOLD = 30;
-    let timer: ReturnType<typeof setTimeout>;
-
-    function handleScrollEnd() {
-      // Small delay to run after tocbot's deferred throttled update.
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        const atBottom =
-          window.innerHeight + window.scrollY >=
-          document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
-        if (!atBottom) {
-          return;
-        }
-
-        const links = toc!.querySelectorAll<HTMLAnchorElement>(".toc-link");
-        if (links.length === 0) {
-          return;
-        }
-
-        const lastLink = links[links.length - 1];
-        if (lastLink.classList.contains("is-active-link")) {
-          return;
-        }
-
-        for (const link of links) {
-          link.classList.remove("is-active-link");
-          link.closest("li")?.classList.remove("is-active-li");
-        }
-        lastLink.classList.add("is-active-link");
-        lastLink.closest("li")?.classList.add("is-active-li");
-      }, 100);
-    }
-
-    document.addEventListener("scrollend", handleScrollEnd);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("scrollend", handleScrollEnd);
-    };
-  }, [tocRef]);
-}
-
 export function TableOfContents({ article }: TableOfContentsProps) {
-  const tocRef = useRef<HTMLElement>(null);
+  const { scrollContainer, contentRoot, navigateToFragment } = useReaderContext();
+  const [headings, setHeadings] = useState<Heading[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
 
+  // Extract headings from the rendered DOM (after ArticleView processes IDs)
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      tocbot.init({
-        tocSelector: ".js-toc",
-        contentSelector: ".prose",
-        headingSelector: "h2, h3, h4",
-        orderedList: false,
-        headingsOffset: 32,
-        scrollSmooth: false,
-        hasInnerContainers: true,
-        scrollHandlerType: "throttle",
-        throttleTimeout: 0,
-        onClick(e) {
-          e.preventDefault();
-          const href = (e.currentTarget as HTMLAnchorElement).getAttribute("href");
-          if (!href?.startsWith("#")) {
-            return;
-          }
-          navigateToFragment(decodeURIComponent(href.slice(1)), { replace: true });
-        },
-      });
-    });
+    let frame = 0;
+
+    function updateHeadings() {
+      const elements = contentRoot.querySelectorAll<HTMLElement>(".prose h2, .prose h3, .prose h4");
+      const found: Heading[] = [];
+      for (const el of elements) {
+        if (el.id && el.textContent?.trim()) {
+          found.push({
+            id: el.id,
+            text: el.textContent.trim(),
+            level: Number.parseInt(el.tagName[1], 10),
+          });
+        }
+      }
+      setHeadings(found);
+      setActiveId((current) =>
+        found.some((heading) => heading.id === current) ? current : (found[0]?.id ?? ""),
+      );
+    }
+
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateHeadings);
+    }
+
+    const observerTarget = contentRoot instanceof Document ? contentRoot.body : contentRoot;
+    const observer = observerTarget
+      ? new MutationObserver(() => {
+          scheduleUpdate();
+        })
+      : null;
+
+    scheduleUpdate();
+    observer?.observe(observerTarget, { childList: true, subtree: true });
 
     return () => {
       cancelAnimationFrame(frame);
-      tocbot.destroy();
+      observer?.disconnect();
     };
-  }, [article]);
+  }, [article.content, contentRoot]);
 
-  useActivateLastSectionAtBottom(tocRef);
+  // Scroll-based active heading tracking is more reliable than IntersectionObserver
+  // here because the same component runs against both the window and custom
+  // scroll containers, including inside extension iframes.
+  useEffect(() => {
+    if (headings.length === 0) {
+      setActiveId("");
+      return;
+    }
+
+    const elements: HTMLElement[] = [];
+
+    for (const h of headings) {
+      const el =
+        contentRoot instanceof Document
+          ? contentRoot.getElementById(h.id)
+          : contentRoot.querySelector<HTMLElement>(`#${CSS.escape(h.id)}`);
+      if (el) {
+        elements.push(el);
+      }
+    }
+
+    if (elements.length === 0) {
+      return;
+    }
+
+    const target = scrollContainer ?? window;
+    const TOP_OFFSET = 96;
+    const BOTTOM_THRESHOLD = 24;
+    let frame = 0;
+
+    function getRelativeTop(el: HTMLElement) {
+      const top = el.getBoundingClientRect().top;
+      if (!scrollContainer) {
+        return top;
+      }
+
+      return top - scrollContainer.getBoundingClientRect().top;
+    }
+
+    function updateActiveId() {
+      let nextId = elements[0].id;
+
+      for (const el of elements) {
+        if (getRelativeTop(el) <= TOP_OFFSET) {
+          nextId = el.id;
+          continue;
+        }
+
+        break;
+      }
+
+      const atBottom = scrollContainer
+        ? scrollContainer.scrollTop + scrollContainer.clientHeight >=
+          scrollContainer.scrollHeight - BOTTOM_THRESHOLD
+        : window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
+
+      if (atBottom) {
+        nextId = elements[elements.length - 1].id;
+      }
+
+      setActiveId((current) => (current === nextId ? current : nextId));
+    }
+
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateActiveId);
+    }
+
+    scheduleUpdate();
+    target.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      target.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
+  }, [headings, scrollContainer, contentRoot]);
+
+  if (headings.length === 0) {
+    return null;
+  }
+
+  const minLevel = Math.min(...headings.map((h) => h.level));
 
   return (
     <nav
-      ref={tocRef}
       aria-label="Table of contents"
       className="js-toc fixed left-6 top-20 hidden max-h-[calc(100vh-8rem)] w-56 max-w-[calc(50vw-21rem)] overflow-y-auto overscroll-contain xl:block"
-    />
+    >
+      <TocList
+        headings={headings}
+        activeId={activeId}
+        baseLevel={minLevel}
+        navigateToFragment={navigateToFragment}
+      />
+    </nav>
+  );
+}
+
+function TocList({
+  headings,
+  activeId,
+  baseLevel,
+  navigateToFragment,
+}: {
+  headings: Heading[];
+  activeId: string;
+  baseLevel: number;
+  navigateToFragment: (id: string, opts?: { replace?: boolean }) => void;
+}) {
+  const items: { heading: Heading; children: Heading[] }[] = [];
+
+  for (const heading of headings) {
+    if (heading.level === baseLevel) {
+      items.push({ heading, children: [] });
+    } else if (items.length > 0) {
+      items[items.length - 1].children.push(heading);
+    }
+  }
+
+  return (
+    <ol className="toc-list">
+      {items.map(({ heading, children }) => (
+        <li key={heading.id}>
+          <TocLink
+            heading={heading}
+            isActive={activeId === heading.id}
+            onClick={navigateToFragment}
+          />
+          {children.length > 0 && (
+            <ol className="toc-list">
+              {children.map((child) => (
+                <li key={child.id}>
+                  <TocLink
+                    heading={child}
+                    isActive={activeId === child.id}
+                    onClick={navigateToFragment}
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function TocLink({
+  heading,
+  isActive,
+  onClick,
+}: {
+  heading: Heading;
+  isActive: boolean;
+  onClick: (id: string, opts?: { replace?: boolean }) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`toc-link${isActive ? " is-active-link" : ""}`}
+      aria-current={isActive ? "location" : undefined}
+      onClick={() => {
+        onClick(heading.id, { replace: true });
+      }}
+    >
+      {heading.text}
+    </button>
   );
 }

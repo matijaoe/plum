@@ -6,6 +6,9 @@
   "scripts": {
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
     "dev": "vp run web#dev",
+    "dev:extension": "vp run extension#dev",
+    "build": "vp run web#build",
+    "build:extension": "vp run extension#build",
     "prepare": "vp config"
   },
   "devDependencies": {
