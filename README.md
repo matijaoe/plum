@@ -1,6 +1,6 @@
 # Plum
 
-A client-side reader mode app and a chrome extension. Paste any article URL and get a clean, distraction-free view.
+Reader mode app + chrome extension. Load any article URL and get a clean, distraction-free view.
 
 Big plans ahead 🙂
 
