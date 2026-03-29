@@ -22,6 +22,10 @@ function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | nu
     const BOTTOM_THRESHOLD = 30;
 
     function handleScroll() {
+      if (!toc) {
+        return;
+      }
+
       const atBottom =
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
@@ -30,7 +34,7 @@ function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | nu
         return;
       }
 
-      const links = toc!.querySelectorAll<HTMLAnchorElement>(".toc-link");
+      const links = toc.querySelectorAll<HTMLAnchorElement>(".toc-link");
       if (links.length === 0) {
         return;
       }
