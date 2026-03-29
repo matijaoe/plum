@@ -26,7 +26,7 @@ function excludeOniguruma(): Plugin {
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   manifest: {
-    name: "Plum Reader",
+    name: "Plum",
     description: "Distraction-free reader mode for any page",
     permissions: ["activeTab", "scripting", "storage"],
     action: {},
