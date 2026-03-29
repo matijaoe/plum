@@ -33,8 +33,18 @@ export async function downloadUrl(url: string) {
   }
 }
 
-export async function copyText(text: string): Promise<boolean> {
+export async function copyText(text: string, html?: string): Promise<boolean> {
   try {
+    if (html && navigator.clipboard?.write) {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([text], { type: "text/plain" }),
+        }),
+      ]);
+      return true;
+    }
+
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
       return true;

@@ -12,8 +12,10 @@ export function CodeCopyButton({ pre }: { pre: HTMLPreElement }) {
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      const text = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
-      void copyText(text).then((didCopy) => {
+      const code = pre.querySelector("code");
+      const text = code?.textContent ?? pre.textContent ?? "";
+      const html = `<pre><code>${code?.innerHTML ?? pre.innerHTML}</code></pre>`;
+      void copyText(text, html).then((didCopy) => {
         if (!didCopy) {
           return;
         }
