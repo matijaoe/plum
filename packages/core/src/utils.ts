@@ -17,7 +17,7 @@ export function getPlatformModifier(): string {
 }
 
 export async function downloadUrl(url: string) {
-  const name = url.split("/").pop() || "download";
+  const name = new URL(url).pathname.split("/").pop() || "download";
   try {
     const res = await fetch(url);
     const blob = await res.blob();
