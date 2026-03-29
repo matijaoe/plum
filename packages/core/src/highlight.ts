@@ -1,3 +1,5 @@
+import { SHIKI_FALLBACK_LANGUAGE, SHIKI_THEMES } from "./shiki";
+
 function getCodeBlocks(container: HTMLElement): NodeListOf<Element> {
   return container.querySelectorAll("pre > code");
 }
@@ -65,8 +67,8 @@ export async function highlightCodeBlocks(
     const text = code.textContent ?? "";
     try {
       const html = await codeToHtml(text, {
-        lang: lang?.toLowerCase() ?? "text",
-        themes: { light: "vitesse-light", dark: "vitesse-dark" },
+        lang: lang?.toLowerCase() ?? SHIKI_FALLBACK_LANGUAGE,
+        themes: SHIKI_THEMES,
       });
       const wrapper = document.createElement("div");
       wrapper.innerHTML = html;

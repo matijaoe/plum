@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Article } from "../reader";
 import { usePlum } from "../plum-context";
 
@@ -13,14 +13,15 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({ article }: TableOfContentsProps) {
-  const tocRef = useRef<HTMLElement>(null);
   const { scrollContainer, contentRoot, navigateToFragment } = usePlum();
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>("");
 
   // Extract headings from the rendered DOM (after ArticleView processes IDs)
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
+    let frame = 0;
+
+    function updateHeadings() {
       const elements = contentRoot.querySelectorAll<HTMLElement>(".prose h2, .prose h3, .prose h4");
       const found: Heading[] = [];
       for (const el of elements) {
@@ -33,17 +34,41 @@ export function TableOfContents({ article }: TableOfContentsProps) {
         }
       }
       setHeadings(found);
-    });
-    return () => cancelAnimationFrame(frame);
+      setActiveId((current) =>
+        found.some((heading) => heading.id === current) ? current : (found[0]?.id ?? ""),
+      );
+    }
+
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateHeadings);
+    }
+
+    const observerTarget = contentRoot instanceof Document ? contentRoot.body : contentRoot;
+    const observer = observerTarget
+      ? new MutationObserver(() => {
+          scheduleUpdate();
+        })
+      : null;
+
+    scheduleUpdate();
+    observer?.observe(observerTarget, { childList: true, subtree: true });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
   }, [article.content, contentRoot]);
 
-  // IntersectionObserver-based scroll spy
+  // Scroll-based active heading tracking is more reliable than IntersectionObserver
+  // here because the same component runs against both the window and custom
+  // scroll containers, including inside extension iframes.
   useEffect(() => {
     if (headings.length === 0) {
+      setActiveId("");
       return;
     }
 
-    const root = scrollContainer ?? null;
     const elements: HTMLElement[] = [];
 
     for (const h of headings) {
@@ -60,72 +85,60 @@ export function TableOfContents({ article }: TableOfContentsProps) {
       return;
     }
 
-    const visibleIds = new Set<string>();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            visibleIds.add(entry.target.id);
-          } else {
-            visibleIds.delete(entry.target.id);
-          }
-        }
-
-        // Pick the first visible heading in document order
-        for (const el of elements) {
-          if (visibleIds.has(el.id)) {
-            setActiveId(el.id);
-            return;
-          }
-        }
-      },
-      { root, rootMargin: "-32px 0px -70% 0px", threshold: 0 },
-    );
-
-    for (const el of elements) {
-      observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, [headings, scrollContainer, contentRoot]);
-
-  // Activate last section when scrolled to bottom
-  useEffect(() => {
-    if (headings.length === 0) {
-      return;
-    }
-
     const target = scrollContainer ?? window;
-    let timer: ReturnType<typeof setTimeout>;
-    const BOTTOM_THRESHOLD = 30;
+    const TOP_OFFSET = 96;
+    const BOTTOM_THRESHOLD = 24;
+    let frame = 0;
 
-    function handleScrollEnd() {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        let atBottom: boolean;
-        if (scrollContainer) {
-          atBottom =
-            scrollContainer.scrollTop + scrollContainer.clientHeight >=
-            scrollContainer.scrollHeight - BOTTOM_THRESHOLD;
-        } else {
-          atBottom =
-            window.innerHeight + window.scrollY >=
-            document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
-        }
+    function getRelativeTop(el: HTMLElement) {
+      const top = el.getBoundingClientRect().top;
+      if (!scrollContainer) {
+        return top;
+      }
 
-        if (atBottom) {
-          setActiveId(headings[headings.length - 1].id);
-        }
-      }, 100);
+      return top - scrollContainer.getBoundingClientRect().top;
     }
 
-    target.addEventListener("scrollend", handleScrollEnd);
+    function updateActiveId() {
+      let nextId = elements[0].id;
+
+      for (const el of elements) {
+        if (getRelativeTop(el) <= TOP_OFFSET) {
+          nextId = el.id;
+          continue;
+        }
+
+        break;
+      }
+
+      const atBottom = scrollContainer
+        ? scrollContainer.scrollTop + scrollContainer.clientHeight >=
+          scrollContainer.scrollHeight - BOTTOM_THRESHOLD
+        : window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
+
+      if (atBottom) {
+        nextId = elements[elements.length - 1].id;
+      }
+
+      setActiveId((current) => (current === nextId ? current : nextId));
+    }
+
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateActiveId);
+    }
+
+    scheduleUpdate();
+    target.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+
     return () => {
-      clearTimeout(timer);
-      target.removeEventListener("scrollend", handleScrollEnd);
+      cancelAnimationFrame(frame);
+      target.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
     };
-  }, [headings, scrollContainer]);
+  }, [headings, scrollContainer, contentRoot]);
 
   if (headings.length === 0) {
     return null;
@@ -135,7 +148,6 @@ export function TableOfContents({ article }: TableOfContentsProps) {
 
   return (
     <nav
-      ref={tocRef}
       aria-label="Table of contents"
       className="js-toc fixed left-6 top-20 hidden max-h-[calc(100vh-8rem)] w-56 max-w-[calc(50vw-21rem)] overflow-y-auto overscroll-contain xl:block"
     >
@@ -143,6 +155,7 @@ export function TableOfContents({ article }: TableOfContentsProps) {
         headings={headings}
         activeId={activeId}
         baseLevel={minLevel}
+        onActivate={setActiveId}
         navigateToFragment={navigateToFragment}
       />
     </nav>
@@ -153,11 +166,13 @@ function TocList({
   headings,
   activeId,
   baseLevel,
+  onActivate,
   navigateToFragment,
 }: {
   headings: Heading[];
   activeId: string;
   baseLevel: number;
+  onActivate: (id: string) => void;
   navigateToFragment: (id: string, opts?: { replace?: boolean }) => void;
 }) {
   const items: { heading: Heading; children: Heading[] }[] = [];
@@ -177,6 +192,7 @@ function TocList({
           <TocLink
             heading={heading}
             isActive={activeId === heading.id}
+            onActivate={onActivate}
             onClick={navigateToFragment}
           />
           {children.length > 0 && (
@@ -186,6 +202,7 @@ function TocList({
                   <TocLink
                     heading={child}
                     isActive={activeId === child.id}
+                    onActivate={onActivate}
                     onClick={navigateToFragment}
                   />
                 </li>
@@ -201,10 +218,12 @@ function TocList({
 function TocLink({
   heading,
   isActive,
+  onActivate,
   onClick,
 }: {
   heading: Heading;
   isActive: boolean;
+  onActivate: (id: string) => void;
   onClick: (id: string, opts?: { replace?: boolean }) => void;
 }) {
   return (
@@ -213,6 +232,7 @@ function TocLink({
       className={`toc-link${isActive ? " is-active-link" : ""}`}
       onClick={(e) => {
         e.preventDefault();
+        onActivate(heading.id);
         onClick(heading.id, { replace: true });
       }}
     >

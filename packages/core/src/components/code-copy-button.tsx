@@ -1,6 +1,7 @@
 import { Check, Copy } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { copyText } from "../utils";
 
 const iconTransition = { type: "spring" as const, duration: 0.3, bounce: 0 };
 
@@ -12,7 +13,11 @@ export function CodeCopyButton({ pre }: { pre: HTMLPreElement }) {
     (e: React.MouseEvent) => {
       e.stopPropagation();
       const text = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
-      void navigator.clipboard.writeText(text).then(() => {
+      void copyText(text).then((didCopy) => {
+        if (!didCopy) {
+          return;
+        }
+
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }

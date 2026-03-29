@@ -18,6 +18,7 @@ html {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Source Serif 4", ui-serif, Georgia, serif;
   --font-mono: "Geist Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  --max-width-content: 44.5rem;
 }
 
 :root {

@@ -1,4 +1,13 @@
-import { createContext, useContext, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { navigateToFragment as defaultNavigateToFragment } from "./hooks/use-fragment-navigation";
 
 type CodeToHtmlFn = (
   code: string,
@@ -16,22 +25,10 @@ interface PlumContextValue {
   navigateToFragment: (id: string, options?: { replace?: boolean }) => void;
   /** Custom Shiki codeToHtml function. null = dynamic import default. */
   codeToHtml: CodeToHtmlFn | null;
-}
-
-function defaultNavigateToFragment(id: string, { replace = false }: { replace?: boolean } = {}) {
-  const el = document.getElementById(id);
-  if (!el) {
-    return;
-  }
-
-  el.scrollIntoView({ behavior: "smooth" });
-
-  const url = `${window.location.pathname}${window.location.search}#${id}`;
-  if (replace) {
-    history.replaceState(null, "", url);
-  } else {
-    history.pushState(null, "", url);
-  }
+  /** Whether a modal overlay (lightbox, drawer) is currently open. */
+  overlayOpen: boolean;
+  /** Call when an overlay opens or closes. Components use this to signal modal state. */
+  onOverlayChange: (open: boolean) => void;
 }
 
 const PlumContext = createContext<PlumContextValue>({
@@ -40,24 +37,49 @@ const PlumContext = createContext<PlumContextValue>({
   contentRoot: document,
   navigateToFragment: defaultNavigateToFragment,
   codeToHtml: null,
+  overlayOpen: false,
+  onOverlayChange: () => {},
 });
 
 export function usePlum() {
   return useContext(PlumContext);
 }
 
-interface PlumProviderProps extends Partial<PlumContextValue> {
+interface PlumProviderProps extends Partial<
+  Omit<PlumContextValue, "overlayOpen" | "onOverlayChange">
+> {
   children: ReactNode;
 }
 
 export function PlumProvider({ children, ...overrides }: PlumProviderProps) {
-  const value: PlumContextValue = {
-    portalContainer: overrides.portalContainer ?? null,
-    scrollContainer: overrides.scrollContainer ?? null,
-    contentRoot: overrides.contentRoot ?? document,
-    navigateToFragment: overrides.navigateToFragment ?? defaultNavigateToFragment,
-    codeToHtml: overrides.codeToHtml ?? null,
-  };
+  const countRef = useRef(0);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+
+  const onOverlayChange = useCallback((open: boolean) => {
+    countRef.current += open ? 1 : -1;
+    setOverlayOpen(countRef.current > 0);
+  }, []);
+
+  const value = useMemo<PlumContextValue>(
+    () => ({
+      portalContainer: overrides.portalContainer ?? null,
+      scrollContainer: overrides.scrollContainer ?? null,
+      contentRoot: overrides.contentRoot ?? document,
+      navigateToFragment: overrides.navigateToFragment ?? defaultNavigateToFragment,
+      codeToHtml: overrides.codeToHtml ?? null,
+      overlayOpen,
+      onOverlayChange,
+    }),
+    [
+      overrides.portalContainer,
+      overrides.scrollContainer,
+      overrides.contentRoot,
+      overrides.navigateToFragment,
+      overrides.codeToHtml,
+      overlayOpen,
+      onOverlayChange,
+    ],
+  );
 
   return <PlumContext.Provider value={value}>{children}</PlumContext.Provider>;
 }

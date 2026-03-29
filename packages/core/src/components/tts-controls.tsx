@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
 import { AnimatePresence, motion, LayoutGroup } from "motion/react";
 import { Equalizer } from "./equalizer";
+import { usePlum } from "../plum-context";
 import { RATES, extractText, springTap } from "../utils";
 
 /** Higher damping for smooth layout morphing (compact ↔ expanded). */
@@ -107,6 +108,7 @@ interface TtsControlsProps {
 }
 
 export function TtsControls({ articleHtml }: TtsControlsProps) {
+  const { overlayOpen } = usePlum();
   const [rate, setRate] = useState(1);
   const [pending, setPending] = useState(false);
   const text = useMemo(() => extractText(articleHtml), [articleHtml]);
@@ -146,15 +148,17 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
     setRate(RATES[nextIndex]);
   }
 
-  useHotkey("L", () => (isActive ? handleStop() : start()));
+  useHotkey("L", () => (isActive ? handleStop() : start()), {
+    enabled: !overlayOpen,
+  });
 
   useHotkey("Space", handlePlayPause, {
-    enabled: isActive,
+    enabled: isActive && !overlayOpen,
     preventDefault: true,
   });
 
   useHotkey("Escape", handleStop, {
-    enabled: isActive,
+    enabled: isActive && !overlayOpen,
   });
 
   return (

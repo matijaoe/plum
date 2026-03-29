@@ -10,14 +10,24 @@ export function ScrollToTop() {
 
   useEffect(() => {
     const target = scrollContainer ?? window;
+    let frame = 0;
 
     function onScroll() {
-      const scrollY = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
-      setVisible(scrollY > SCROLL_THRESHOLD);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const scrollY = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+        setVisible((prev) => {
+          const next = scrollY > SCROLL_THRESHOLD;
+          return prev === next ? prev : next;
+        });
+      });
     }
 
     target.addEventListener("scroll", onScroll, { passive: true });
-    return () => target.removeEventListener("scroll", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      target.removeEventListener("scroll", onScroll);
+    };
   }, [scrollContainer]);
 
   function handleClick() {

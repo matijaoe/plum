@@ -1,6 +1,6 @@
 import { Circle, CircleHalf, List, Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useSpeech } from "react-text-to-speech";
 import { motion } from "motion/react";
 import { Drawer } from "vaul";
@@ -21,8 +21,16 @@ interface MobileDrawerProps {
 }
 
 export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
-  const { portalContainer } = usePlum();
+  const { portalContainer, onOverlayChange } = usePlum();
   const [open, setOpen] = useState(false);
+
+  const handleOpenChange = useCallback(
+    (value: boolean) => {
+      setOpen(value);
+      onOverlayChange(value);
+    },
+    [onOverlayChange],
+  );
   const [rate, setRate] = useState(1);
   const text = useMemo(() => extractText(articleHtml), [articleHtml]);
   const { speechStatus, start, pause, stop } = useSpeech({
@@ -71,7 +79,7 @@ export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
       {/* Floating pill — centered, Dynamic Island style */}
       <motion.button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => handleOpenChange(true)}
         animate={{
           opacity: open ? 0 : 1,
           scale: open ? 0.9 : 1,
@@ -105,7 +113,7 @@ export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
       </motion.button>
 
       {/* Drawer — dark surface */}
-      <Drawer.Root open={open} onOpenChange={setOpen} noBodyStyles>
+      <Drawer.Root open={open} onOpenChange={handleOpenChange} noBodyStyles>
         <Drawer.Portal container={portalContainer}>
           <Drawer.Overlay className="fixed inset-0 z-30 bg-black/40" />
           <Drawer.Content
@@ -169,7 +177,7 @@ export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
                   type="button"
                   onClick={() => {
                     stop();
-                    setOpen(false);
+                    handleOpenChange(false);
                     action.onClick();
                   }}
                   className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.98] active:bg-white/5"

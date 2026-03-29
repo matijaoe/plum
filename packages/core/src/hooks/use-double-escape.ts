@@ -2,10 +2,15 @@ import { useEffect, useRef } from "react";
 
 const DOUBLE_PRESS_MS = 500;
 
-export function useDoubleEscape(onDoubleEscape: () => void) {
+export function useDoubleEscape(onDoubleEscape: () => void, enabled = true) {
   const lastPressRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) {
+      lastPressRef.current = 0;
+      return;
+    }
+
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key !== "Escape") {
         return;
@@ -22,5 +27,5 @@ export function useDoubleEscape(onDoubleEscape: () => void) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onDoubleEscape]);
+  }, [onDoubleEscape, enabled]);
 }

@@ -1,14 +1,24 @@
-import { ArrowLeft, ArrowRight, DownloadSimple, X } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { useEffect, useMemo, useRef } from "react";
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createRoot, type Root } from "react-dom/client";
-import Lightbox from "yet-another-react-lightbox";
-import Download from "yet-another-react-lightbox/plugins/download";
-import "yet-another-react-lightbox/styles.css";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
 import { usePlum } from "../plum-context";
 import type { Article } from "../reader";
 import { downloadUrl, formatDate } from "../utils";
+
+const ArticleLightbox = lazy(async () => {
+  const module = await import("./article-lightbox");
+  return { default: module.ArticleLightbox };
+});
 
 function parseSourceParts(url: string): { host: string; path: string } {
   try {
@@ -54,6 +64,83 @@ function extractLocalFragment(href: string, sourceUrl: string): string | null {
   return null;
 }
 
+function processArticleContent(content: string, sourceUrl: string): string {
+  const doc = new DOMParser().parseFromString(content, "text/html");
+
+  const headingAnchors = new Set<Element>();
+  for (const heading of doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
+    const anchor = heading.querySelector(":scope > a[href]");
+    if (!anchor) {
+      continue;
+    }
+
+    const fragment = extractLocalFragment(anchor.getAttribute("href") ?? "", sourceUrl);
+    if (!fragment) {
+      continue;
+    }
+
+    if (!heading.id) {
+      heading.id = decodeURIComponent(fragment);
+    }
+
+    anchor.setAttribute("href", `#${heading.id}`);
+    anchor.setAttribute("data-heading-link", "");
+    anchor.removeAttribute("target");
+    anchor.removeAttribute("rel");
+    headingAnchors.add(anchor);
+  }
+
+  const usedIds = new Set<string>(Array.from(doc.querySelectorAll("[id]"), (e) => e.id));
+  for (const heading of doc.querySelectorAll("h2, h3, h4")) {
+    if (!heading.id) {
+      let base = (heading.textContent?.trim() ?? "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "");
+      if (!base) {
+        continue;
+      }
+      let id = base;
+      let n = 1;
+      while (usedIds.has(id)) {
+        id = `${base}-${n++}`;
+      }
+      heading.id = id;
+      usedIds.add(id);
+    }
+
+    if (!heading.querySelector(":scope > a[href^='#']")) {
+      const anchor = doc.createElement("a");
+      anchor.href = `#${heading.id}`;
+      anchor.setAttribute("data-heading-link", "");
+      while (heading.firstChild) {
+        anchor.appendChild(heading.firstChild);
+      }
+      heading.appendChild(anchor);
+      headingAnchors.add(anchor);
+    }
+  }
+
+  for (const link of doc.querySelectorAll("a[href]")) {
+    if (headingAnchors.has(link)) {
+      continue;
+    }
+
+    const fragment = extractLocalFragment(link.getAttribute("href") ?? "", sourceUrl);
+    if (fragment != null) {
+      link.setAttribute("href", `#${fragment}`);
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
+      continue;
+    }
+
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer");
+  }
+
+  return doc.body.innerHTML;
+}
+
 interface ArticleViewProps {
   article: Article;
   sourceUrl: string;
@@ -62,14 +149,33 @@ interface ArticleViewProps {
 export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
-  const { slides, open, index, setIndex, setOpen, openLightbox } = useArticleLightbox(article);
+  const [processedContent, setProcessedContent] = useState(article.content);
+  const lightbox = useArticleLightbox(article);
   const {
     portalContainer,
     scrollContainer,
     contentRoot,
     navigateToFragment,
     codeToHtml: ctxCodeToHtml,
+    onOverlayChange,
   } = usePlum();
+  const { slides, open, index, setIndex, openLightbox } = lightbox;
+
+  const setOpen = useCallback(
+    (value: boolean) => {
+      lightbox.setOpen(value);
+      onOverlayChange(value);
+    },
+    [lightbox, onOverlayChange],
+  );
+
+  const openLightboxWithOverlay = useCallback(
+    (src: string) => {
+      openLightbox(src);
+      onOverlayChange(true);
+    },
+    [openLightbox, onOverlayChange],
+  );
 
   function onProseClick(e: React.MouseEvent<HTMLDivElement>) {
     const target = e.target as HTMLElement;
@@ -77,7 +183,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     const img = target.closest("img");
     if (img?.src) {
       e.preventDefault();
-      openLightbox(img.src);
+      openLightboxWithOverlay(img.src);
       return;
     }
 
@@ -104,84 +210,25 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     { enabled: open },
   );
 
-  // Pre-process article HTML: rewrite links, add heading IDs and anchors.
-  // Running this as a pure transform on the string (not a DOM side-effect)
-  // makes it immune to React re-renders or DOM recreation.
-  const processedContent = useMemo(() => {
-    const doc = new DOMParser().parseFromString(article.content, "text/html");
+  useEffect(() => {
+    setProcessedContent(article.content);
 
-    const headingAnchors = new Set<Element>();
-    for (const heading of doc.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
-      const anchor = heading.querySelector(":scope > a[href]");
-      if (!anchor) {
-        continue;
+    let cancelled = false;
+    const frame = requestAnimationFrame(() => {
+      const nextContent = processArticleContent(article.content, sourceUrl);
+      if (cancelled) {
+        return;
       }
 
-      const fragment = extractLocalFragment(anchor.getAttribute("href") ?? "", sourceUrl);
-      if (!fragment) {
-        continue;
-      }
+      startTransition(() => {
+        setProcessedContent((current) => (current === nextContent ? current : nextContent));
+      });
+    });
 
-      if (!heading.id) {
-        heading.id = decodeURIComponent(fragment);
-      }
-
-      anchor.setAttribute("href", `#${heading.id}`);
-      anchor.setAttribute("data-heading-link", "");
-      anchor.removeAttribute("target");
-      anchor.removeAttribute("rel");
-      headingAnchors.add(anchor);
-    }
-
-    const usedIds = new Set<string>(Array.from(doc.querySelectorAll("[id]"), (e) => e.id));
-    for (const heading of doc.querySelectorAll("h2, h3, h4")) {
-      if (!heading.id) {
-        let base = (heading.textContent?.trim() ?? "")
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-          .replace(/[^\w-]/g, "");
-        if (!base) {
-          continue;
-        }
-        let id = base;
-        let n = 1;
-        while (usedIds.has(id)) {
-          id = `${base}-${n++}`;
-        }
-        heading.id = id;
-        usedIds.add(id);
-      }
-
-      if (!heading.querySelector(":scope > a[href^='#']")) {
-        const anchor = doc.createElement("a");
-        anchor.href = `#${heading.id}`;
-        anchor.setAttribute("data-heading-link", "");
-        while (heading.firstChild) {
-          anchor.appendChild(heading.firstChild);
-        }
-        heading.appendChild(anchor);
-        headingAnchors.add(anchor);
-      }
-    }
-
-    for (const link of doc.querySelectorAll("a[href]")) {
-      if (headingAnchors.has(link)) {
-        continue;
-      }
-
-      const fragment = extractLocalFragment(link.getAttribute("href") ?? "", sourceUrl);
-      if (fragment != null) {
-        link.setAttribute("href", `#${fragment}`);
-        link.removeAttribute("target");
-        link.removeAttribute("rel");
-        continue;
-      }
-
-      link.setAttribute("target", "_blank");
-      link.setAttribute("rel", "noopener noreferrer");
-    }
-
-    return doc.body.innerHTML;
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
   }, [article.content, sourceUrl]);
 
   useEffect(() => {
@@ -190,7 +237,9 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     } else {
       window.scrollTo({ top: 0, behavior: "instant" });
     }
+  }, [sourceUrl, scrollContainer]);
 
+  useEffect(() => {
     if (window.location.hash) {
       const id = decodeURIComponent(window.location.hash.slice(1));
       const target =
@@ -201,7 +250,9 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         requestAnimationFrame(() => target.scrollIntoView({ behavior: "instant" }));
       }
     }
+  }, [processedContent, contentRoot]);
 
+  useEffect(() => {
     const el = proseRef.current;
     if (!el) {
       return;
@@ -209,15 +260,30 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
 
     const controller = new AbortController();
     const roots: Root[] = [];
+    const codeBlocks = el.querySelectorAll("pre > code");
+    let idleHandle: number | null = null;
+    let timeoutHandle: number | null = null;
 
-    void import("../highlight").then(async ({ highlightCodeBlocks }) => {
+    if (codeBlocks.length === 0) {
+      return () => {
+        controller.abort();
+      };
+    }
+
+    const runHighlight = async () => {
+      const { highlightCodeBlocks } = await import("../highlight");
       await highlightCodeBlocks(el, controller.signal, ctxCodeToHtml ?? undefined);
       if (controller.signal.aborted) {
         return;
       }
 
+      const pres = el.querySelectorAll<HTMLPreElement>("pre");
+      if (pres.length === 0) {
+        return;
+      }
+
       const { CodeCopyButton } = await import("./code-copy-button");
-      for (const pre of el.querySelectorAll<HTMLPreElement>("pre")) {
+      for (const pre of pres) {
         if (pre.querySelector(".code-copy-btn")) {
           continue;
         }
@@ -227,15 +293,33 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         roots.push(root);
         root.render(<CodeCopyButton pre={pre} />);
       }
-    });
+    };
+
+    if ("requestIdleCallback" in window) {
+      idleHandle = window.requestIdleCallback(() => {
+        void runHighlight();
+      });
+    } else {
+      timeoutHandle = globalThis.setTimeout(() => {
+        void runHighlight();
+      }, 0);
+    }
 
     return () => {
       controller.abort();
+      if (idleHandle !== null) {
+        if ("cancelIdleCallback" in window) {
+          window.cancelIdleCallback(idleHandle);
+        }
+      }
+      if (timeoutHandle !== null) {
+        globalThis.clearTimeout(timeoutHandle);
+      }
       for (const root of roots) {
         root.unmount();
       }
     };
-  }, [article.content, sourceUrl, scrollContainer, contentRoot, ctxCodeToHtml]);
+  }, [processedContent, ctxCodeToHtml]);
 
   return (
     <article dir={article.dir ?? undefined} lang={article.lang ?? undefined}>
@@ -277,7 +361,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
           alt=""
           className="stagger-in mt-8 w-full cursor-zoom-in rounded-lg outline outline-1 -outline-offset-1 outline-border-subtle"
           style={{ animationDelay: "360ms" }}
-          onClick={() => openLightbox(article.ogImage!)}
+          onClick={() => openLightboxWithOverlay(article.ogImage!)}
         />
       )}
 
@@ -289,31 +373,17 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         onClick={onProseClick}
       />
 
-      {slides.length > 0 && (
-        <Lightbox
-          open={open}
-          close={() => setOpen(false)}
-          index={index}
-          on={{ view: ({ index: i }) => setIndex(i) }}
-          slides={slides}
-          plugins={[Download]}
-          portal={{ root: portalContainer }}
-          noScroll={{ disabled: true }}
-          animation={{ fade: 250, swipe: 350 }}
-          carousel={{ finite: true }}
-          controller={{ closeOnBackdropClick: true }}
-          render={{
-            iconClose: () => <X size={18} weight="bold" />,
-            iconDownload: () => <DownloadSimple size={18} weight="bold" />,
-            iconPrev: () => <ArrowLeft size={18} weight="bold" />,
-            iconNext: () => <ArrowRight size={18} weight="bold" />,
-            ...(slides.length <= 1 && {
-              buttonPrev: () => null,
-              buttonNext: () => null,
-            }),
-          }}
-          className="yarl-plum"
-        />
+      {open && slides.length > 0 && (
+        <Suspense fallback={null}>
+          <ArticleLightbox
+            open={open}
+            index={index}
+            setIndex={setIndex}
+            setOpen={setOpen}
+            slides={slides}
+            portalContainer={portalContainer}
+          />
+        </Suspense>
       )}
     </article>
   );
