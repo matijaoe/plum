@@ -8,9 +8,9 @@ interface TableOfContentsProps {
 }
 
 /**
- * When the user scrolls near the bottom of the page, the last heading can
- * never reach the top of the viewport, so tocbot won't activate it.
- * This hook detects that case and forces the last TOC link active.
+ * When the page is scrolled to the bottom, the last heading can never reach
+ * the top of the viewport so tocbot won't activate it. After scrolling stops,
+ * we check and override to the last link if needed.
  */
 function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -20,41 +20,43 @@ function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | nu
     }
 
     const BOTTOM_THRESHOLD = 30;
+    let timer: ReturnType<typeof setTimeout>;
 
-    function handleScroll() {
-      if (!toc) {
-        return;
-      }
+    function handleScrollEnd() {
+      // Small delay to run after tocbot's deferred throttled update.
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const atBottom =
+          window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
+        if (!atBottom) {
+          return;
+        }
 
-      const atBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
+        const links = toc!.querySelectorAll<HTMLAnchorElement>(".toc-link");
+        if (links.length === 0) {
+          return;
+        }
 
-      if (!atBottom) {
-        return;
-      }
+        const lastLink = links[links.length - 1];
+        if (lastLink.classList.contains("is-active-link")) {
+          return;
+        }
 
-      const links = toc.querySelectorAll<HTMLAnchorElement>(".toc-link");
-      if (links.length === 0) {
-        return;
-      }
-
-      const lastLink = links[links.length - 1];
-      if (lastLink.classList.contains("is-active-link")) {
-        return;
-      }
-
-      for (const link of links) {
-        link.classList.remove("is-active-link");
-        link.closest("li")?.classList.remove("is-active-li");
-      }
-
-      lastLink.classList.add("is-active-link");
-      lastLink.closest("li")?.classList.add("is-active-li");
+        for (const link of links) {
+          link.classList.remove("is-active-link");
+          link.closest("li")?.classList.remove("is-active-li");
+        }
+        lastLink.classList.add("is-active-link");
+        lastLink.closest("li")?.classList.add("is-active-li");
+      }, 100);
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    document.addEventListener("scrollend", handleScrollEnd);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("scrollend", handleScrollEnd);
+    };
   }, [tocRef]);
 }
 
