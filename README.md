@@ -6,6 +6,8 @@ Big plans ahead 🙂
 
 Built with React, Tailwind CSS v4, Mozilla Readability, and DOMPurify.
 
+<img width="3016" height="1692" src="https://github.com/user-attachments/assets/840edcf5-24df-40e8-99da-a7d74087c540" />
+
 ## Setup
 
 ```sh
