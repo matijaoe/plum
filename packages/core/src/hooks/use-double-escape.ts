@@ -25,7 +25,8 @@ export function useDoubleEscape(onDoubleEscape: () => void, enabled = true) {
       }
     }
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    const controller = new AbortController();
+    document.addEventListener("keydown", handleKeyDown, { signal: controller.signal });
+    return () => controller.abort();
   }, [onDoubleEscape, enabled]);
 }
