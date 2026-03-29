@@ -1,6 +1,8 @@
 # Plum
 
-A client-side reader mode app. Paste any article URL and get a clean, distraction-free view.
+A client-side reader mode app and a chrome extension. Paste any article URL and get a clean, distraction-free view.
+
+Big plans ahead 🙂
 
 Built with React, Tailwind CSS v4, Mozilla Readability, and DOMPurify.
 
