@@ -36,13 +36,17 @@ function waitForCodeBlocks(
 export async function highlightCodeBlocks(
   container: HTMLElement,
   signal: AbortSignal,
+  customCodeToHtml?: (
+    code: string,
+    options: { lang: string; themes: Record<string, string> },
+  ) => Promise<string>,
 ): Promise<void> {
   const blocks = await waitForCodeBlocks(container, signal);
   if (!blocks || signal.aborted) {
     return;
   }
 
-  const { codeToHtml } = await import("shiki");
+  const codeToHtml = customCodeToHtml ?? (await import("shiki")).codeToHtml;
 
   for (const code of blocks) {
     if (signal.aborted) {

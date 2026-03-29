@@ -6,7 +6,7 @@ import Lightbox from "yet-another-react-lightbox";
 import Download from "yet-another-react-lightbox/plugins/download";
 import "yet-another-react-lightbox/styles.css";
 import { useArticleLightbox } from "../hooks/use-article-lightbox";
-import { navigateToFragment } from "../hooks/use-fragment-navigation";
+import { usePlum } from "../plum-context";
 import type { Article } from "../reader";
 import { downloadUrl, formatDate } from "../utils";
 
@@ -63,6 +63,13 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   const proseRef = useRef<HTMLDivElement>(null);
   const source = useMemo(() => parseSourceParts(sourceUrl), [sourceUrl]);
   const { slides, open, index, setIndex, setOpen, openLightbox } = useArticleLightbox(article);
+  const {
+    portalContainer,
+    scrollContainer,
+    contentRoot,
+    navigateToFragment,
+    codeToHtml: ctxCodeToHtml,
+  } = usePlum();
 
   function onProseClick(e: React.MouseEvent<HTMLDivElement>) {
     const target = e.target as HTMLElement;
@@ -178,10 +185,18 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
   }, [article.content, sourceUrl]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: "instant" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
 
     if (window.location.hash) {
-      const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      const target =
+        contentRoot instanceof Document
+          ? contentRoot.getElementById(id)
+          : contentRoot.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
       if (target) {
         requestAnimationFrame(() => target.scrollIntoView({ behavior: "instant" }));
       }
@@ -196,7 +211,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
     const roots: Root[] = [];
 
     void import("../highlight").then(async ({ highlightCodeBlocks }) => {
-      await highlightCodeBlocks(el, controller.signal);
+      await highlightCodeBlocks(el, controller.signal, ctxCodeToHtml ?? undefined);
       if (controller.signal.aborted) {
         return;
       }
@@ -220,7 +235,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
         root.unmount();
       }
     };
-  }, [article.content, sourceUrl]);
+  }, [article.content, sourceUrl, scrollContainer, contentRoot, ctxCodeToHtml]);
 
   return (
     <article dir={article.dir ?? undefined} lang={article.lang ?? undefined}>
@@ -282,6 +297,7 @@ export function ArticleView({ article, sourceUrl }: ArticleViewProps) {
           on={{ view: ({ index: i }) => setIndex(i) }}
           slides={slides}
           plugins={[Download]}
+          portal={{ root: portalContainer }}
           noScroll={{ disabled: true }}
           animation={{ fade: 250, swipe: 350 }}
           carousel={{ finite: true }}

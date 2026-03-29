@@ -1,18 +1,27 @@
-import { Circle, CircleHalf, List, Pause, Play, Plus, Stop } from "@phosphor-icons/react";
+import { Circle, CircleHalf, List, Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useSpeech } from "react-text-to-speech";
 import { motion } from "motion/react";
 import { Drawer } from "vaul";
 import { useTheme } from "next-themes";
-import { Equalizer, RATES, extractText, springTap } from "@plum/core";
+import { Equalizer } from "./equalizer";
+import { RATES, extractText, springTap } from "../utils";
+import { usePlum } from "../plum-context";
+
+export interface MobileDrawerAction {
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+}
 
 interface MobileDrawerProps {
   articleHtml: string;
-  onClear: () => void;
+  actions: MobileDrawerAction[];
 }
 
-export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
+export function MobileDrawer({ articleHtml, actions }: MobileDrawerProps) {
+  const { portalContainer } = usePlum();
   const [open, setOpen] = useState(false);
   const [rate, setRate] = useState(1);
   const text = useMemo(() => extractText(articleHtml), [articleHtml]);
@@ -46,17 +55,10 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
     setTheme(next[(theme as keyof typeof next) ?? "system"]);
   }
 
-  function handleReadNew() {
-    stop();
-    setOpen(false);
-    onClear();
-  }
-
   const themeLabel = theme === "system" ? "System" : dark ? "Dark" : "Light";
   const themeIconWeight: "bold" | "fill" = theme === "system" ? "bold" : dark ? "fill" : "bold";
   const ThemeIcon = theme === "system" ? CircleHalf : Circle;
 
-  // Hotkeys
   useHotkey("L", () => (isActive ? stop() : start()));
   useHotkey("Space", handlePlayPause, {
     enabled: isActive,
@@ -104,7 +106,7 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
 
       {/* Drawer — dark surface */}
       <Drawer.Root open={open} onOpenChange={setOpen} noBodyStyles>
-        <Drawer.Portal>
+        <Drawer.Portal container={portalContainer}>
           <Drawer.Overlay className="fixed inset-0 z-30 bg-black/40" />
           <Drawer.Content
             className="fixed inset-x-0 bottom-0 z-30 rounded-t-2xl bg-drawer outline-none"
@@ -161,14 +163,21 @@ export function MobileDrawer({ articleHtml, onClear }: MobileDrawerProps) {
 
             {/* Actions */}
             <div className="space-y-0.5 px-4 pt-2 pb-[calc(2.5rem+var(--sai-bottom))]">
-              <button
-                type="button"
-                onClick={handleReadNew}
-                className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.98] active:bg-white/5"
-              >
-                <Plus size={18} weight="bold" />
-                <span className="text-[14px]">Read new article</span>
-              </button>
+              {actions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => {
+                    stop();
+                    setOpen(false);
+                    action.onClick();
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 text-left text-white/60 transition-[color,background-color,scale] duration-150 ease-out active:scale-[0.98] active:bg-white/5"
+                >
+                  {action.icon}
+                  <span className="text-[14px]">{action.label}</span>
+                </button>
+              ))}
 
               <button
                 type="button"

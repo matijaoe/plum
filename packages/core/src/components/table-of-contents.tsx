@@ -1,104 +1,222 @@
-import tocbot from "tocbot";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Article } from "../reader";
-import { navigateToFragment } from "../hooks/use-fragment-navigation";
+import { usePlum } from "../plum-context";
+
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
 
 interface TableOfContentsProps {
   article: Article;
 }
 
-/**
- * When the page is scrolled to the bottom, the last heading can never reach
- * the top of the viewport so tocbot won't activate it. After scrolling stops,
- * we check and override to the last link if needed.
- */
-function useActivateLastSectionAtBottom(tocRef: React.RefObject<HTMLElement | null>) {
+export function TableOfContents({ article }: TableOfContentsProps) {
+  const tocRef = useRef<HTMLElement>(null);
+  const { scrollContainer, contentRoot, navigateToFragment } = usePlum();
+  const [headings, setHeadings] = useState<Heading[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
+
+  // Extract headings from the rendered DOM (after ArticleView processes IDs)
   useEffect(() => {
-    const toc = tocRef.current;
-    if (!toc) {
+    const frame = requestAnimationFrame(() => {
+      const elements = contentRoot.querySelectorAll<HTMLElement>(".prose h2, .prose h3, .prose h4");
+      const found: Heading[] = [];
+      for (const el of elements) {
+        if (el.id && el.textContent?.trim()) {
+          found.push({
+            id: el.id,
+            text: el.textContent.trim(),
+            level: Number.parseInt(el.tagName[1], 10),
+          });
+        }
+      }
+      setHeadings(found);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [article.content, contentRoot]);
+
+  // IntersectionObserver-based scroll spy
+  useEffect(() => {
+    if (headings.length === 0) {
       return;
     }
 
-    const BOTTOM_THRESHOLD = 30;
+    const root = scrollContainer ?? null;
+    const elements: HTMLElement[] = [];
+
+    for (const h of headings) {
+      const el =
+        contentRoot instanceof Document
+          ? contentRoot.getElementById(h.id)
+          : contentRoot.querySelector<HTMLElement>(`#${CSS.escape(h.id)}`);
+      if (el) {
+        elements.push(el);
+      }
+    }
+
+    if (elements.length === 0) {
+      return;
+    }
+
+    const visibleIds = new Set<string>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            visibleIds.add(entry.target.id);
+          } else {
+            visibleIds.delete(entry.target.id);
+          }
+        }
+
+        // Pick the first visible heading in document order
+        for (const el of elements) {
+          if (visibleIds.has(el.id)) {
+            setActiveId(el.id);
+            return;
+          }
+        }
+      },
+      { root, rootMargin: "-32px 0px -70% 0px", threshold: 0 },
+    );
+
+    for (const el of elements) {
+      observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [headings, scrollContainer, contentRoot]);
+
+  // Activate last section when scrolled to bottom
+  useEffect(() => {
+    if (headings.length === 0) {
+      return;
+    }
+
+    const target = scrollContainer ?? window;
     let timer: ReturnType<typeof setTimeout>;
+    const BOTTOM_THRESHOLD = 30;
 
     function handleScrollEnd() {
-      // Small delay to run after tocbot's deferred throttled update.
       clearTimeout(timer);
       timer = setTimeout(() => {
-        const atBottom =
-          window.innerHeight + window.scrollY >=
-          document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
-        if (!atBottom) {
-          return;
+        let atBottom: boolean;
+        if (scrollContainer) {
+          atBottom =
+            scrollContainer.scrollTop + scrollContainer.clientHeight >=
+            scrollContainer.scrollHeight - BOTTOM_THRESHOLD;
+        } else {
+          atBottom =
+            window.innerHeight + window.scrollY >=
+            document.documentElement.scrollHeight - BOTTOM_THRESHOLD;
         }
 
-        const links = toc!.querySelectorAll<HTMLAnchorElement>(".toc-link");
-        if (links.length === 0) {
-          return;
+        if (atBottom) {
+          setActiveId(headings[headings.length - 1].id);
         }
-
-        const lastLink = links[links.length - 1];
-        if (lastLink.classList.contains("is-active-link")) {
-          return;
-        }
-
-        for (const link of links) {
-          link.classList.remove("is-active-link");
-          link.closest("li")?.classList.remove("is-active-li");
-        }
-        lastLink.classList.add("is-active-link");
-        lastLink.closest("li")?.classList.add("is-active-li");
       }, 100);
     }
 
-    document.addEventListener("scrollend", handleScrollEnd);
+    target.addEventListener("scrollend", handleScrollEnd);
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("scrollend", handleScrollEnd);
+      target.removeEventListener("scrollend", handleScrollEnd);
     };
-  }, [tocRef]);
-}
+  }, [headings, scrollContainer]);
 
-export function TableOfContents({ article }: TableOfContentsProps) {
-  const tocRef = useRef<HTMLElement>(null);
+  if (headings.length === 0) {
+    return null;
+  }
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      tocbot.init({
-        tocSelector: ".js-toc",
-        contentSelector: ".prose",
-        headingSelector: "h2, h3, h4",
-        orderedList: false,
-        headingsOffset: 32,
-        scrollSmooth: false,
-        hasInnerContainers: true,
-        scrollHandlerType: "throttle",
-        throttleTimeout: 0,
-        onClick(e) {
-          e.preventDefault();
-          const href = (e.currentTarget as HTMLAnchorElement).getAttribute("href");
-          if (!href?.startsWith("#")) {
-            return;
-          }
-          navigateToFragment(decodeURIComponent(href.slice(1)), { replace: true });
-        },
-      });
-    });
-
-    return () => {
-      cancelAnimationFrame(frame);
-      tocbot.destroy();
-    };
-  }, [article]);
-
-  useActivateLastSectionAtBottom(tocRef);
+  const minLevel = Math.min(...headings.map((h) => h.level));
 
   return (
     <nav
       ref={tocRef}
       aria-label="Table of contents"
       className="js-toc fixed left-6 top-20 hidden max-h-[calc(100vh-8rem)] w-56 max-w-[calc(50vw-21rem)] overflow-y-auto overscroll-contain xl:block"
-    />
+    >
+      <TocList
+        headings={headings}
+        activeId={activeId}
+        baseLevel={minLevel}
+        navigateToFragment={navigateToFragment}
+      />
+    </nav>
+  );
+}
+
+function TocList({
+  headings,
+  activeId,
+  baseLevel,
+  navigateToFragment,
+}: {
+  headings: Heading[];
+  activeId: string;
+  baseLevel: number;
+  navigateToFragment: (id: string, opts?: { replace?: boolean }) => void;
+}) {
+  const items: { heading: Heading; children: Heading[] }[] = [];
+
+  for (const heading of headings) {
+    if (heading.level === baseLevel) {
+      items.push({ heading, children: [] });
+    } else if (items.length > 0) {
+      items[items.length - 1].children.push(heading);
+    }
+  }
+
+  return (
+    <ol className="toc-list">
+      {items.map(({ heading, children }) => (
+        <li key={heading.id}>
+          <TocLink
+            heading={heading}
+            isActive={activeId === heading.id}
+            onClick={navigateToFragment}
+          />
+          {children.length > 0 && (
+            <ol className="toc-list">
+              {children.map((child) => (
+                <li key={child.id}>
+                  <TocLink
+                    heading={child}
+                    isActive={activeId === child.id}
+                    onClick={navigateToFragment}
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function TocLink({
+  heading,
+  isActive,
+  onClick,
+}: {
+  heading: Heading;
+  isActive: boolean;
+  onClick: (id: string, opts?: { replace?: boolean }) => void;
+}) {
+  return (
+    <a
+      href={`#${heading.id}`}
+      className={`toc-link${isActive ? " is-active-link" : ""}`}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(heading.id, { replace: true });
+      }}
+    >
+      {heading.text}
+    </a>
   );
 }

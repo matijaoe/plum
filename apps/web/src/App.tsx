@@ -1,9 +1,10 @@
 import { Agentation } from "agentation";
 import clsx from "clsx";
 import { Plus } from "@phosphor-icons/react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ArticleView,
+  MobileDrawer,
   TableOfContents,
   ScrollToTop,
   ThemeToggle,
@@ -11,9 +12,9 @@ import {
   useDoubleEscape,
   useIsMobile,
 } from "@plum/core";
+import type { MobileDrawerAction } from "@plum/core";
 import { DragOverlay } from "./components/drag-overlay";
 import { DropZone } from "./components/drop-zone";
-import { MobileDrawer } from "./components/mobile-drawer";
 import { useArticle } from "./hooks/use-article";
 import { useGlobalDrop } from "./hooks/use-global-drop";
 import { useGlobalPaste } from "./hooks/use-global-paste";
@@ -29,6 +30,17 @@ function App() {
         clear();
       }
     }, [article, clear]),
+  );
+
+  const drawerActions = useMemo<MobileDrawerAction[]>(
+    () => [
+      {
+        label: "Read new article",
+        icon: <Plus size={18} weight="bold" />,
+        onClick: clear,
+      },
+    ],
+    [clear],
   );
 
   const hasArticle = !!article && !!sourceUrl;
@@ -85,7 +97,7 @@ function App() {
           )}
 
           {/* Mobile: bottom drawer with player + actions */}
-          {isMobile && <MobileDrawer articleHtml={article.content} onClear={clear} />}
+          {isMobile && <MobileDrawer articleHtml={article.content} actions={drawerActions} />}
         </>
       ) : !sourceUrl ? (
         <DropZone isDragging={isDragging} onUrl={submitUrl} />
