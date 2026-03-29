@@ -2,7 +2,7 @@ import { Pause, Play, Stop } from "@phosphor-icons/react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useMemo, useState } from "react";
 import { useSpeech } from "react-text-to-speech";
-import { AnimatePresence, domAnimation, LayoutGroup, LazyMotion, m } from "motion/react";
+import { AnimatePresence, domMax, LayoutGroup, LazyMotion, m } from "motion/react";
 import { Equalizer } from "./equalizer";
 import { useReaderContext } from "../reader-context";
 import { RATES, extractText, springTap } from "../utils";
@@ -162,7 +162,7 @@ export function TtsControls({ articleHtml }: TtsControlsProps) {
   });
 
   return (
-    <LazyMotion features={domAnimation}>
+    <LazyMotion features={domMax}>
       <LayoutGroup>
         <AnimatePresence initial={false} mode="wait">
           {!isActive ? (
