@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { validateUrl } from "../reader";
+import { validateUrl } from "@plum/core";
 
 export function useGlobalDrop(onUrl: (url: string) => void) {
   const [isDragging, setIsDragging] = useState(false);

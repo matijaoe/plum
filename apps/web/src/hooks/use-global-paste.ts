@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { validateUrl } from "../reader";
+import { validateUrl } from "@plum/core";
 
 export function useGlobalPaste(onUrl: (url: string) => void) {
   useEffect(() => {

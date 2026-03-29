@@ -1,8 +1,7 @@
 import clsx from "clsx";
 import { ClipboardText } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { validateUrl } from "../reader";
-import { getPlatformModifier } from "../utils";
+import { validateUrl, getPlatformModifier } from "@plum/core";
 
 interface DropZoneProps {
   isDragging: boolean;

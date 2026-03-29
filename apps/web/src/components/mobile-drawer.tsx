@@ -5,8 +5,7 @@ import { useSpeech } from "react-text-to-speech";
 import { motion } from "motion/react";
 import { Drawer } from "vaul";
 import { useTheme } from "next-themes";
-import { Equalizer } from "./equalizer";
-import { RATES, extractText, springTap } from "../utils";
+import { Equalizer, RATES, extractText, springTap } from "@plum/core";
 
 interface MobileDrawerProps {
   articleHtml: string;

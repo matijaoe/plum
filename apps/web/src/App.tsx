@@ -2,19 +2,21 @@ import { Agentation } from "agentation";
 import clsx from "clsx";
 import { Plus } from "@phosphor-icons/react";
 import { useCallback } from "react";
-import { ArticleView } from "./components/article-view";
-import { TableOfContents } from "./components/table-of-contents";
+import {
+  ArticleView,
+  TableOfContents,
+  ScrollToTop,
+  ThemeToggle,
+  TtsControls,
+  useDoubleEscape,
+  useIsMobile,
+} from "@plum/core";
 import { DragOverlay } from "./components/drag-overlay";
 import { DropZone } from "./components/drop-zone";
 import { MobileDrawer } from "./components/mobile-drawer";
-import { ScrollToTop } from "./components/scroll-to-top";
-import { ThemeToggle } from "./components/theme-toggle";
-import { TtsControls } from "./components/tts-controls";
 import { useArticle } from "./hooks/use-article";
-import { useDoubleEscape } from "./hooks/use-double-escape";
 import { useGlobalDrop } from "./hooks/use-global-drop";
 import { useGlobalPaste } from "./hooks/use-global-paste";
-import { useIsMobile } from "./hooks/use-is-mobile";
 
 function App() {
   const { article, sourceUrl, submitUrl, clear } = useArticle();
