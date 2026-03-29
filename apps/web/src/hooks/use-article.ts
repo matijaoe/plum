@@ -1,7 +1,23 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { fetchArticle, normalizeUrl, validateUrl } from "../reader";
+import { normalizeUrl, parseArticle, validateUrl } from "@plum/core";
+import { ofetch } from "ofetch";
+
+const PROXY_URL = import.meta.env.VITE_PROXY_URL as string;
+
+async function fetchHtml(url: string): Promise<string> {
+  return ofetch(`${PROXY_URL}/`, {
+    query: { url },
+    responseType: "text",
+  });
+}
+
+async function fetchArticle(rawUrl: string) {
+  const normalizedUrl = normalizeUrl(rawUrl);
+  const html = await fetchHtml(normalizedUrl);
+  return parseArticle(html, normalizedUrl);
+}
 
 function getInitialUrl(): string | null {
   const params = new URLSearchParams(window.location.search);

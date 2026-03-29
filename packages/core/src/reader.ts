@@ -1,8 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import DOMPurify from "dompurify";
-import { ofetch } from "ofetch";
 import { readingTime } from "reading-time-estimator";
-
 import { hasProtocol } from "ufo";
 
 export interface Article {
@@ -16,8 +14,6 @@ export interface Article {
   lang: string | null;
   dir: string | null;
 }
-
-const PROXY_URL = import.meta.env.VITE_PROXY_URL as string;
 
 export function normalizeUrl(raw: string): string {
   if (hasProtocol(raw)) {
@@ -48,22 +44,11 @@ function fixConcatenatedNames(byline: string): string {
   return byline.replace(/([a-z])([A-Z])/g, "$1, $2");
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  return ofetch(`${PROXY_URL}/`, {
-    query: { url },
-    responseType: "text",
-  });
-}
-
-export async function fetchArticle(rawUrl: string): Promise<Article> {
-  const normalizedUrl = normalizeUrl(rawUrl);
-  const html = await fetchHtml(normalizedUrl);
-
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const base = doc.createElement("base");
-  base.href = normalizedUrl;
-  doc.head.prepend(base);
-
+/**
+ * Shared internal parsing pipeline. Takes a Document and source URL,
+ * runs Readability + DOMPurify + metadata extraction.
+ */
+function parseDocument(doc: Document, sourceUrl: string): Article {
   const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute("content") ?? null;
   const ogSiteName =
     doc.querySelector('meta[property="og:site_name"]')?.getAttribute("content") ?? null;
@@ -75,12 +60,34 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
     doc.querySelector('meta[name="DC.date"]')?.getAttribute("content") ??
     null;
 
-  // Capture language classes before Readability strips them
+  // Capture language classes before Readability strips them.
+  // Standard pattern: <pre><code class="language-ts">
+  // VitePress/Shiki pattern: <div class="language-ts"><pre><code>
   const langMap = new Map<string, string>();
-  for (const code of doc.querySelectorAll("pre > code[class*='language-']")) {
-    const lang = [...code.classList].find((c) => c.startsWith("language-"));
+  for (const code of doc.querySelectorAll("pre > code")) {
+    const text = (code.textContent ?? "").slice(0, 80);
+    if (langMap.has(text)) {
+      continue;
+    }
+
+    // Check the <code> element itself (standard pattern)
+    let lang = [...code.classList].find((c) => c.startsWith("language-"));
+
+    // Check the <pre> parent
+    if (!lang) {
+      const pre = code.parentElement;
+      lang = pre ? [...pre.classList].find((c) => c.startsWith("language-")) : undefined;
+    }
+
+    // Check ancestor wrapper divs (VitePress/Shiki pattern)
+    if (!lang) {
+      const wrapper = code.closest("div[class*='language-']");
+      if (wrapper) {
+        lang = [...wrapper.classList].find((c) => c.startsWith("language-"));
+      }
+    }
+
     if (lang) {
-      const text = (code.textContent ?? "").slice(0, 80);
       langMap.set(text, lang);
     }
   }
@@ -109,9 +116,9 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
   let siteName = parsed.siteName ?? ogSiteName;
   if (!siteName) {
     try {
-      siteName = new URL(normalizedUrl).hostname;
+      siteName = new URL(sourceUrl).hostname;
     } catch {
-      siteName = normalizedUrl;
+      siteName = sourceUrl;
     }
   }
 
@@ -138,4 +145,29 @@ export async function fetchArticle(rawUrl: string): Promise<Article> {
     lang: parsed.lang ?? null,
     dir: parsed.dir ?? null,
   };
+}
+
+/**
+ * Parse an article from a raw HTML string and source URL.
+ * Used by the web app after fetching HTML via proxy.
+ */
+export function parseArticle(html: string, sourceUrl: string): Article {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const base = doc.createElement("base");
+  base.href = sourceUrl;
+  doc.head.prepend(base);
+  return parseDocument(doc, sourceUrl);
+}
+
+/**
+ * Parse an article from an existing Document object.
+ * Used by the extension which already has access to the page DOM.
+ */
+export function extractArticleFromDom(doc: Document, sourceUrl: string): Article {
+  // Clone the document so Readability can mutate it without affecting the live page
+  const clone = doc.cloneNode(true) as Document;
+  const base = clone.createElement("base");
+  base.href = sourceUrl;
+  clone.head.prepend(base);
+  return parseDocument(clone, sourceUrl);
 }
