@@ -9,6 +9,7 @@
     "dev:extension": "vp run extension#dev",
     "build": "vp run web#build",
     "build:extension": "vp run extension#build",
+    "zip:extension": "vp run extension#zip",
     "prepare": "vp config"
   },
   "devDependencies": {
